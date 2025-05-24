@@ -4,6 +4,16 @@ const User = require("../models/user.models");
 
 const profileRouter = express.Router();
 
+/**
+ * GET /api/profile/:userID
+ * Retrieves a user's profile information with privacy controls
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @param {string} userID - ID of the user whose profile to retrieve
+ * @returns {object} User profile data with varying fields based on privacy settings
+ * @throws {400} If user ID is invalid or other errors occur
+ * @throws {404} If user is not found
+ */
 profileRouter.get("/:userID", authUserToken, async (req, res) => {
   try {
     const user = await User.findById(req.params.userID);

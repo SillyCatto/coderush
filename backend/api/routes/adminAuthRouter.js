@@ -6,6 +6,16 @@ const HTTP = require("../utils/httStatus");
 const { authUser } = require("../middlewares/authLogin");
 const { authUserToken } = require("../middlewares/authToken");
 
+
+/**
+ * POST /api/adminAuth/login
+ * Authenticates an administrator user
+ *
+ * @middleware {function} authUser - Verifies user credentials
+ * @returns {object} Response with user details and JWT token
+ * @throws {403} If user is not an admin
+ * @throws {500} If login process fails
+ */
 // Admin login route
 router.post("/login", authUser, async (req, res) => {
   try {
@@ -36,6 +46,17 @@ router.post("/login", authUser, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/adminAuth/verify
+ * Verifies that a user has admin privileges
+ *
+ * @middleware {function} authUserToken - Verifies JWT token
+ * @returns {object} Response with verification status and user details
+ * @throws {401} If authentication fails
+ * @throws {404} If user not found
+ * @throws {403} If user is not an admin
+ * @throws {500} If verification process fails
+ */
 // Verify admin status route
 router.get("/verify", authUserToken, async (req, res) => {
   try {

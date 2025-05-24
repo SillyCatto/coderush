@@ -9,6 +9,15 @@ const { authUser } = require("../middlewares/authLogin");
 
 const authRouter = express.Router();
 
+
+/**
+ * POST /api/auth/signup
+ * Registers a new user in the system
+ *
+ * @middleware {function} validateSignupInput - Validates the signup form data
+ * @returns {string} Confirmation message on successful registration
+ * @throws {400} If validation fails or database error occurs
+ */
 authRouter.post("/signup", validateSignupInput, async (req, res) => {
   try {
     req.body.password = await encryptPassword(req.body.password);
@@ -22,6 +31,16 @@ authRouter.post("/signup", validateSignupInput, async (req, res) => {
   }
 });
 
+
+/**
+ * POST /api/auth/login
+ * Authenticates a user and returns a JWT token
+ *
+ * @middleware {function} validateLoginInput - Validates the login credentials
+ * @middleware {function} authUser - Verifies user credentials
+ * @returns {object} User profile data and success message
+ * @throws {400} If authentication fails
+ */
 authRouter.post("/login", validateLoginInput, authUser, async (req, res) => {
   try {
     const user = req.body.user;
@@ -54,6 +73,12 @@ authRouter.post("/login", validateLoginInput, authUser, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/auth/logout
+ * Logs out a user by clearing the authentication cookie
+ *
+ * @returns {object} Success message confirming logout
+ */
 authRouter.post("/logout", (req, res) => {
   res
     .cookie("token", null, {

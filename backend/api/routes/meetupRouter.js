@@ -6,7 +6,19 @@ const { authUserToken } = require("../middlewares/authToken");
 const { sendError, sendSuccess } = require("../utils/response");
 const HTTP = require("../utils/httStatus");
 
-// Create a new meetup
+/**
+ * POST /api/meetups/add
+ * Creates a new meetup between buyer and seller
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @param {string} listingId - ID of the listing for the meetup
+ * @param {string} meetupLocation - Physical location for the meetup
+ * @param {string|Date} scheduledAt - Date and time for the meetup
+ * @returns {object} Created meetup details with populated seller, buyer and listing info
+ * @throws {400} If required fields are missing
+ * @throws {404} If listing is not found
+ * @throws {500} If server error occurs
+ */
 router.post("/add", authUserToken, async (req, res) => {
   try {
     const { listingId, meetupLocation, scheduledAt } = req.body;
@@ -46,7 +58,14 @@ router.post("/add", authUserToken, async (req, res) => {
   }
 });
 
-// Get all meetups for the authenticated user (as buyer or seller)
+/**
+ * GET /api/meetups/myMeetups
+ * Retrieves all meetups for the authenticated user (as buyer or seller)
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @returns {object} Array of meetups with populated seller, buyer and listing info
+ * @throws {500} If server error occurs
+ */
 router.get("/myMeetups", authUserToken, async (req, res) => {
   try {
     const meetups = await Meetup.find({
@@ -64,7 +83,17 @@ router.get("/myMeetups", authUserToken, async (req, res) => {
   }
 });
 
-// Get a specific meetup by ID
+/**
+ * GET /api/meetups/:id
+ * Retrieves a specific meetup by ID
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @param {string} id - ID of the meetup to retrieve
+ * @returns {object} Meetup details with populated seller, buyer and listing info
+ * @throws {403} If user is not a participant in the meetup
+ * @throws {404} If meetup is not found
+ * @throws {500} If server error occurs
+ */
 router.get("/:id", authUserToken, async (req, res) => {
   try {
     const meetup = await Meetup.findById(req.params.id)
@@ -95,7 +124,19 @@ router.get("/:id", authUserToken, async (req, res) => {
   }
 });
 
-// Update meetup status
+/**
+ * PATCH /api/meetups/:id/status
+ * Updates the status of a meetup
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @param {string} id - ID of the meetup to update
+ * @param {string} status - New status value (pending/confirmed/completed)
+ * @returns {object} Updated meetup details
+ * @throws {400} If status is invalid
+ * @throws {403} If user is not authorized to change status
+ * @throws {404} If meetup is not found
+ * @throws {500} If server error occurs
+ */
 router.patch("/:id/status", authUserToken, async (req, res) => {
   try {
     const { status } = req.body;
@@ -139,7 +180,20 @@ router.patch("/:id/status", authUserToken, async (req, res) => {
   }
 });
 
-// Update meetup details
+/**
+ * PUT /api/meetups/:id
+ * Updates meetup details
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @param {string} id - ID of the meetup to update
+ * @param {string} [location] - New meetup location
+ * @param {string|Date} [scheduledAt] - New date and time for the meetup
+ * @returns {object} Updated meetup details
+ * @throws {400} If no updates provided or meetup is completed
+ * @throws {403} If user is not a participant in the meetup
+ * @throws {404} If meetup is not found
+ * @throws {500} If server error occurs
+ */
 router.put("/:id", authUserToken, async (req, res) => {
   try {
     const { location, scheduledAt } = req.body;
@@ -194,7 +248,17 @@ router.put("/:id", authUserToken, async (req, res) => {
   }
 });
 
-// Delete a meetup
+/**
+ * DELETE /api/meetups/delete/:id
+ * Deletes a meetup
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @param {string} id - ID of the meetup to delete
+ * @returns {object} Success message
+ * @throws {403} If user is not a participant in the meetup
+ * @throws {404} If meetup is not found
+ * @throws {500} If server error occurs
+ */
 router.delete("/delete/:id", authUserToken, async (req, res) => {
   try {
     const meetup = await Meetup.findById(req.params.id);
