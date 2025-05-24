@@ -1,9 +1,10 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const listingSchema = new mongoose.Schema({
     title: {
         type: String,
         required: [true, 'Title is required'],
+        trim: true,
     },
     description: String,
     type: {
@@ -41,11 +42,10 @@ const listingSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-});
+}, { timestamps: true });
 
 // Indexes for faster searching
 listingSchema.index({ title: 'text', description: 'text' });
 listingSchema.index({ category: 1, price: 1 });
 
-const Listing = mongoose.model('Listing', listingSchema);
-export default Listing;
+module.exports = mongoose.model('Listing', listingSchema);

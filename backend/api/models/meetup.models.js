@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const meetupSchema = new mongoose.Schema({
     listing: {
@@ -32,10 +32,8 @@ const meetupSchema = new mongoose.Schema({
         default: 'pending'
     },
     scheduledAt: Date
-});
+}, { timestamps: true });
 
 meetupSchema.index({ location: '2dsphere' });
 
-const Meetup = mongoose.model('Meetup', meetupSchema);
-
-export default Meetup;
+module.exports = mongoose.model('Meetup', meetupSchema);
