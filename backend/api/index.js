@@ -1,21 +1,23 @@
-require('dotenv').config();
-
-const express = require('express');
+const express = require("express");
+const cors = require("cors"); // Import CORS
 const app = express();
-const { sql } = require('@vercel/postgres');
 
-const bodyParser = require('body-parser');
-const path = require('path');
+// Enable CORS for all routes (adjust options as needed)
+app.use(cors()); // Basic usage (allows all origins)
 
-// Create application/x-www-form-urlencoded parser
-const urlencodedParser = bodyParser.urlencoded({ extended: false });
+// OR restrict to specific domains (recommended for production)
+// app.use(cors({
+//   origin: ['https://your-frontend-domain.com', 'http://localhost:3000']
+// }));
 
-app.use(express.static('public'));
-
-app.get('/', (req, res) => {
-	res.status(200).json({"message": "OK"});
+// Your API routes
+app.get("/api", (req, res) => {
+  res.json({ message: "API is working with CORS!" });
 });
 
-app.listen(3000, () => console.log('Server ready on port 3000.'));
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on localhost:${PORT}`);
+});
 
 module.exports = app;
