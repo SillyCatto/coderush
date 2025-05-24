@@ -4,9 +4,15 @@ const Listing = require("../models/listing.models");
 const { authUserToken } = require("../middlewares/authToken"); // auth
 const upload = require("../utils/multer"); // For image uploads
 
-// @desc Get current user's listings
-// @route GET /api/listings
-// @access Private
+/**
+ * GET /api/listings/:userId
+ * Retrieves all listings created by the current user
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @param {string} userId - ID of the user whose listings to retrieve
+ * @returns {object} Array of user's listings with count
+ * @throws {500} If server error occurs
+ */
 router.get("/:userId", authUserToken, async (req, res) => {
   try {
     const listings = await Listing.find({ seller: req.user.id })
@@ -26,6 +32,25 @@ router.get("/:userId", authUserToken, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/listings
+ * Retrieves and filters listings with pagination
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @param {number} [page=1] - Page number for pagination
+ * @param {number} [limit=10] - Number of items per page (max 10)
+ * @param {string} [type] - Filter by listing type (item/service)
+ * @param {string} [category] - Filter by category
+ * @param {string} [condition] - Filter by item condition
+ * @param {string} [university] - Filter by university
+ * @param {string} [visibility] - Filter by visibility setting
+ * @param {boolean} [biddingEnabled] - Filter by bidding status
+ * @param {number} [minPrice] - Filter by minimum price
+ * @param {number} [maxPrice] - Filter by maximum price
+ * @param {string} [search] - Search term for text search
+ * @returns {object} Listings and pagination information
+ * @throws {500} If server error occurs
+ */
 router.get("/", authUserToken, async (req, res) => {
   try {
     const loggedInUser = req.user;
@@ -111,6 +136,25 @@ router.get("/", authUserToken, async (req, res) => {
   }
 });
 
+
+/**
+ * POST /api/listings/add
+ * Creates a new listing
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @middleware {function} upload.array - Handles image uploads (max 3)
+ * @param {string} title - Listing title
+ * @param {string} description - Listing description
+ * @param {string} type - Listing type (item/service)
+ * @param {number} price - Price for item or hourly rate for service
+ * @param {string} condition - Condition of the item
+ * @param {string} category - Listing category
+ * @param {string} [visibility=university] - Visibility setting (university/global)
+ * @param {boolean} biddingEnabled - Whether bidding is enabled
+ * @returns {object} Created listing details
+ * @throws {400} If required fields are missing
+ * @throws {500} If server error occurs
+ */
 router.post(
   "/add",
   authUserToken,

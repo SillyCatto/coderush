@@ -4,9 +4,20 @@ const Bid = require("../models/bid.model");
 const Listing = require("../models/listing.models");
 const { authUserToken } = require("../middlewares/authToken");
 
-// @desc Add a bid to a listing
-// @route POST /api/bids/:listingId
-// @access Private
+/**
+ * POST /api/bids/add/:listingId
+ * Places a new bid on a listing
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @param {string} listingId - ID of the listing to bid on
+ * @param {number} amount - Bid amount
+ * @returns {object} Confirmation message and bid details
+ * @throws {400} If bid amount is invalid
+ * @throws {403} If user tries to bid on their own listing or bidding is disabled
+ * @throws {404} If listing is not found
+ * @throws {409} If user has already placed a bid on the listing
+ * @throws {500} If server error occurs
+ */
 router.post("/add/:listingId", authUserToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -70,9 +81,17 @@ router.post("/add/:listingId", authUserToken, async (req, res) => {
   }
 });
 
-// @desc Get all bids for a specific listing
-// @route GET /bid/:listingID
-// @access Private (or Public, depending on your app)
+/**
+ * GET /api/bids/:listingID
+ * Retrieves all bids for a specific listing
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @param {string} listingID - ID of the listing to get bids for
+ * @returns {object} Listing title, total bid count, and bid details
+ * @throws {400} If bidding is not enabled for the listing
+ * @throws {404} If listing is not found
+ * @throws {500} If server error occurs
+ */
 router.get("/:listingID", authUserToken, async (req, res) => {
   try {
     const { listingID } = req.params;
