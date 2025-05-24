@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors"); // Import CORS
 const app = express();
 const { sendSuccess } = require("./utils/response");
+const ListingsRouter = require('./routes/listingRouter');
 // const cookieParser = require("cookie-parser");
 
 // Enable CORS for all routes (adjust options as needed)
@@ -38,6 +39,8 @@ app.use("/", authRouter);
 //   origin: ['https://your-frontend-domain.com', 'http://localhost:3000']
 // }));
 
+app.use('/api/listings', ListingsRouter);
+
 // const corsOptions = {
 //   origin: "http://localhost:5173",
 //   credentials: true,
@@ -61,6 +64,13 @@ const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server running on localhost:${PORT}`);
 });
+
+app.get("/api/listings", (req, res) => {
+  const data = {
+    name: "GET all listings",
+  };
+  sendSuccess(res, 200, "OK", data);
+})
 
 module.exports = app;
 
