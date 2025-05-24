@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Listing = require('../models/listing.models');
 const { authUserToken } = require('../middlewares/authToken'); // auth
+const upload = require('../utils/multer'); // For image uploads
 
 // @desc Get current user's listings
 // @route GET /api/listings
@@ -94,5 +95,54 @@ router.get("/", authUserToken, async (req, res) => {
   }
 });
 
+router.post('/add', authUserToken, upload.array('images', 5), async (req, res) => {
+  try {
+    // Validate required fields
+    const { title, description, type, price, category, visibility } = req.body;
+    if (!title || !type || !category) {
+      return res.status(400).json({ error: 'Title, type, and category are required' });
+    }
+
+    // Validate price based on listing type
+    if (type === 'item' && !price) {
+      return res.status(400).json({ error: 'Price is required for items' });
+    }
+    if (type === 'service' && !price) {
+      return res.status(400).json({ error: 'Hourly rate is required for services' });
+    }
+
+    // Create new listing
+    const newListing = new Listing({
+      title,
+      description,
+      type,
+      price: type === 'item' ? price : null,
+      hourlyRate: type === 'service' ? price : null,
+      category,
+      visibility: visibility || 'university', // Default to university-only
+      seller: req.user.id,
+      university: req.user.university, // Auto-set from user's profile
+      images: req.files?.map(file => `/uploads/${file.filename}`) || []
+    });
+
+    // Save to database
+    const savedListing = await newListing.save();
+
+    // Populate seller info in response
+    await savedListing.populate('seller', 'name university');
+
+    res.status(201).json({
+      success: true,
+      data: savedListing
+    });
+
+  } catch (err) {
+    console.error('Error creating listing:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while creating listing'
+    });
+  }
+});
 
 module.exports = router;
