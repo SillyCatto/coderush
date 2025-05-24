@@ -18,8 +18,8 @@ export default function Header() {
         
         <nav className="hidden md:flex items-center space-x-8">
           <Link href="/" className="text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300">Home</Link>
-          <Link href="/marketplace" className="text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300">Browse</Link>
-          <Link href="/categories" className="text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300">Categories</Link>
+          <Link href="/discover" className="text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300">Discover</Link>
+          <Link href="/meetInCampus" className="text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300">Meet in Campus</Link>
           <Link href="/how-it-works" className="text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300">How It Works</Link>
         </nav>
         

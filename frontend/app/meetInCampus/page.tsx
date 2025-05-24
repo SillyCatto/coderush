@@ -6,12 +6,14 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+
 import Image from "next/image"
 import Link from "next/link"
-import { Book, Filter, Laptop, MessageCircle, Pencil, Search, SlidersHorizontal, Users, Zap } from "lucide-react"
+import { Book, Filter, Laptop, MessageCircle, School, Pencil, Search, SlidersHorizontal, Users, Zap } from "lucide-react"
 import Header from "@/app/components/layout/header"
 import Footer from "@/app/components/layout/footer"
 import { ChatPopup } from "@/app/components/chat/chat-popup"
+import { LocationPicker } from "@/app/components/map/location-picker"
 
 // Mock data for items
 const ITEMS_DATA = [
@@ -133,10 +135,15 @@ export default function DiscoverPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
 
-  // Add these states for the chat popup
+  // States for chat popup
   const [chatOpen, setChatOpen] = useState(false)
   const [activeSeller, setActiveSeller] = useState<any>(null)
   const [activeItem, setActiveItem] = useState<any>(null)
+  
+  // States for location picker
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false)
+  const [meetupSeller, setMeetupSeller] = useState<any>(null)
+  const [meetupItem, setMeetupItem] = useState<any>(null)
 
   // Filter items based on search and category
   const filteredItems = ITEMS_DATA.filter(item => {
@@ -155,6 +162,57 @@ export default function DiscoverPage() {
     if (selectedCategory === "all") return matchesQuery
     return matchesQuery && service.category === selectedCategory
   })
+
+  // Handle location selection and send to backend
+  const handleLocationConfirm = async (location: { lat: number; lng: number; name?: string }) => {
+    if (!meetupSeller || !meetupItem) return
+    
+    try {
+      // Here you would send the data to your backend API
+      console.log("Sending meetup request to backend:", {
+        sellerId: meetupSeller.id,
+        sellerName: meetupSeller.name,
+        itemId: meetupItem.id,
+        itemTitle: meetupItem.title,
+        itemType: meetupItem.type,
+        location
+      })
+      
+      // Example API call (uncomment when you have a backend endpoint)
+      // const response = await fetch('/api/meetups', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     sellerId: meetupSeller.id,
+      //     itemId: meetupItem.id,
+      //     itemType: meetupItem.type,
+      //     location
+      //   })
+      // })
+      
+      // Show success message - use toast if you have it imported
+      alert('Meetup request sent successfully!')
+      // or if you have a toast component:
+      // toast({
+      //   title: "Meetup Request Sent!",
+      //   description: `Your request to meet at ${location.name || "the selected location"} has been sent to ${meetupSeller.name}.`,
+      // })
+      
+      // Open chat with the seller after confirming location
+      setActiveSeller(meetupSeller)
+      setActiveItem(meetupItem)
+      setChatOpen(true)
+      
+      // Close the location picker
+      setLocationPickerOpen(false)
+      setMeetupSeller(null)
+      setMeetupItem(null)
+      
+    } catch (error) {
+      console.error("Failed to send meetup request:", error)
+      alert('Failed to send meetup request. Please try again.')
+    }
+  }
 
   // Helper function to render appropriate icon for category
   const CategoryIcon = ({ category }: { category: string }) => {
@@ -177,9 +235,9 @@ export default function DiscoverPage() {
       <Header />
       <main className="flex-grow">
         <div className="container mx-auto py-8 px-4">
-          <h1 className="text-3xl font-bold mb-2">Discover</h1>
+          <h1 className="text-3xl font-bold mb-2">Discover items in the campus - More Secure, More Reliable</h1>
           <p className="text-muted-foreground mb-8">
-            Find textbooks, gadgets, tutoring services, and more from other students
+            Uncomfortable with online transactions? Meet in campus to buy and sell items securely.
           </p>
 
           {/* Search and Filter Bar */}
@@ -280,20 +338,22 @@ export default function DiscoverPage() {
                             size="sm" 
                             className="w-full"
                             onClick={() => {
-                              setActiveSeller({
+                              // Set meetup seller and item info for the location picker
+                              setMeetupSeller({
                                 id: item.sellerId,
                                 name: item.seller
-                              })
-                              setActiveItem({
+                              });
+                              setMeetupItem({
                                 id: item.id,
                                 title: item.title,
                                 type: "product"
-                              })
-                              setChatOpen(true)
+                              });
+                              // Open the location picker dialog
+                              setLocationPickerOpen(true);
                             }}
                           >
-                            <MessageCircle className="h-4 w-4 mr-2" />
-                            Chat with Seller
+                            <School className="h-4 w-4 mr-2" />
+                            Meet in their Campus
                           </Button>
                         </CardFooter>
                       </Card>
@@ -371,20 +431,22 @@ export default function DiscoverPage() {
                             size="sm" 
                             className="w-full"
                             onClick={() => {
-                              setActiveSeller({
+                              // Set meetup seller and item info for the location picker
+                              setMeetupSeller({
                                 id: service.sellerId,
                                 name: service.seller
-                              })
-                              setActiveItem({
+                              });
+                              setMeetupItem({
                                 id: service.id,
                                 title: service.title,
                                 type: "service"
-                              })
-                              setChatOpen(true)
+                              });
+                              // Open the location picker dialog
+                              setLocationPickerOpen(true);
                             }}
                           >
-                            <MessageCircle className="h-4 w-4 mr-2" />
-                            Chat with Seller
+                            <School className="h-4 w-4 mr-2" />
+                            Meet in their Campus
                           </Button>
                         </CardFooter>
                       </Card>
@@ -402,6 +464,21 @@ export default function DiscoverPage() {
               onClose={() => setChatOpen(false)} 
               seller={activeSeller} 
               item={activeItem}
+            />
+          )}
+          
+          {/* Location picker dialog */}
+          {meetupSeller && meetupItem && (
+            <LocationPicker 
+              isOpen={locationPickerOpen}
+              onClose={() => {
+                setLocationPickerOpen(false);
+                setMeetupSeller(null);
+                setMeetupItem(null);
+              }}
+              onConfirm={handleLocationConfirm}
+              sellerName={meetupSeller.name}
+              itemTitle={meetupItem.title}
             />
           )}
         </div>

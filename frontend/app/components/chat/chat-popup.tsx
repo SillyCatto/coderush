@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react"
 import { X, Send } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -87,10 +86,6 @@ export function ChatPopup({ isOpen, onClose, seller, item }: ChatPopupProps) {
       {/* Header */}
       <div className="p-3 border-b bg-muted/40 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={seller.avatar || `https://i.pravatar.cc/150?u=${seller.id}`} />
-            <AvatarFallback>{seller.name[0]}</AvatarFallback>
-          </Avatar>
           <div>
             <div className="font-medium text-sm">{seller.name}</div>
             <div className="text-xs text-muted-foreground truncate max-w-[150px]">
@@ -111,12 +106,7 @@ export function ChatPopup({ isOpen, onClose, seller, item }: ChatPopupProps) {
             className={`flex ${message.sender === "user" ? "justify-end" : 
               message.sender === "system" ? "justify-center" : "justify-start"}`}
           >
-            {message.sender === "seller" && (
-              <Avatar className="h-6 w-6 mr-2 flex-shrink-0 mt-1">
-                <AvatarImage src={seller.avatar || `https://i.pravatar.cc/150?u=${seller.id}`} />
-                <AvatarFallback>{seller.name[0]}</AvatarFallback>
-              </Avatar>
-            )}
+          
             
             <div 
               className={`px-3 py-2 rounded-lg max-w-[80%] ${
@@ -137,21 +127,13 @@ export function ChatPopup({ isOpen, onClose, seller, item }: ChatPopupProps) {
               </p>
             </div>
             
-            {message.sender === "user" && (
-              <Avatar className="h-6 w-6 ml-2 flex-shrink-0 mt-1">
-                <AvatarImage src="https://github.com/shadcn.png" />
-                <AvatarFallback>Me</AvatarFallback>
-              </Avatar>
-            )}
+            {message.sender === "user"}
           </div>
         ))}
         
         {isSending && (
           <div className="flex justify-start">
-            <Avatar className="h-6 w-6 mr-2 flex-shrink-0 mt-1">
-              <AvatarImage src={seller.avatar || `https://i.pravatar.cc/150?u=${seller.id}`} />
-              <AvatarFallback>{seller.name[0]}</AvatarFallback>
-            </Avatar>
+          
             <div className="px-3 py-2 rounded-lg bg-secondary">
               <div className="flex space-x-1">
                 <div className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce"></div>
