@@ -1,0 +1,39 @@
+
+import mongoose from 'mongoose';
+const validator = require('validator');
+// import validator from 'validator'; // is this correct?
+
+const userSchema = new mongoose.Schema({
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        validate: {
+            validator: v => /@(iut-dhaka\.edu|du\.ac\.bd|cu\.ac\.bd|ku\.ac\.bd|ru\.ac\.bd|ju\.ac\.bd|nstu\.edu\.bd|bracu\.ac\.bd|nsu\.edu\.bd|aiub\.edu|ewubd\.edu|iub\.edu\.bd|aust\.edu|uoda\.edu\.bd|diu\.edu\.bd|uap-bd\.edu|uiu\.ac\.bd|sau\.edu\.bd|lus\.ac\.bd|sub\.edu\.bd|pstu\.ac\.bd|hstu\.ac\.bd|mstu\.edu\.bd|bsmrstu\.edu\.bd|bup\.edu\.bd|duet\.ac\.bd|just\.edu\.bd|ruet\.ac\.bd|kuet\.ac\.bd|cuet\.ac\.bd|buet\.ac\.bd)$/i.test(v),
+            message: 'Invalid university email domain'
+        }
+    },
+    university: {
+        type: String,
+        required: true
+    },
+    department: String,
+    year: Number,
+    phone: {
+        type: String,
+        select: false
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+const User = mongoose.model('User', userSchema);
+
+export default User;

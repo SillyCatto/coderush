@@ -13,6 +13,8 @@
 	"dependencies": {
 		"@vercel/postgres": "^0.7.2",
 		"dotenv": "^16.4.1",
-		"express": "^4.18.2"
+		"express": "^4.18.2",
+		"mongoose": "^8.15.0",
+		"validator": "^13.15.0"
 	}
 }
