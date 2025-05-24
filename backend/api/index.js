@@ -1,78 +1,63 @@
 const express = require("express");
-const cors = require("cors"); // Import CORS
+const cors = require("cors");
 const app = express();
-const { sendSuccess } = require("./utils/response");
-// const cookieParser = require("cookie-parser");
+const cookieParser = require("cookie-parser");
+const connectDB = require("./database/mongodb");
 
-// Enable CORS for all routes (adjust options as needed)
-app.use(cors()); // Basic usage (allows all origins)
-// app.use(cors(corsOptions));
-
-// const connectDB = require("./config/database");
-
-// const {
-//   jsonErrorHandler,
-//   globalErrorHandler,
-//   routeNotFound,
-// } = require("./middlewares/errorHandler");
-
+// Routes
 const authRouter = require("./routes/authRouter");
 const userRouter = require("./routes/userRouter");
-const connectDB = require("./database/mongodb");
-// const profileRouter = require("./routes/profileRouter");
-// // const requestRouter = require("./routes/requestRouter");
-// const userRouter = require("./routes/userRouter");
-//
-// app.use(express.json());
-// app.use(jsonErrorHandler);
-// app.use(cookieParser());
-//
-app.use("/", authRouter);
-app.use("/user", userRouter);
+const listingRouter = require("./routes/listingRouter");
 
-// app.use("/profile", profileRouter);
-// app.use("/request", requestRouter);
-// app.use("/user", userRouter);
-//
-// app.use(routeNotFound);
-// app.use(globalErrorHandler);
+// Middleware
+app.use(
+  cors({
+    origin: [
+      process.env.FRONTEND_URL,
+      "http://localhost:5173", // For local development
+    ],
+    credentials: true,
+  }),
+);
+app.use(express.json());
+app.use(cookieParser());
 
-// OR restrict to specific domains (recommended for production)
-// app.use(cors({
-//   origin: ['https://your-frontend-domain.com', 'http://localhost:3000']
-// }));
+// API Routes
+app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter);
+app.use("/api/listings", listingRouter);
 
-app.use('/api/listings', ListingsRouter);
-
-// const corsOptions = {
-//   origin: "http://localhost:5173",
-//   credentials: true,
-//   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-//   allowedHeaders: ["Content-Type", "Authorization"],
-// };
-
-// Your API routes
+// Health check endpoint
 app.get("/api", (req, res) => {
-  res.json({ message: "API is working with CORS!" });
+  res.json({ status: "API is healthy" });
 });
 
+// Test endpoint
 app.get("/test", (req, res) => {
-  const data = {
-    name: "ABC",
-  };
-  sendSuccess(res, 200, "OK", data);
+  res.json({ status: "Test successful", timestamp: new Date() });
 });
 
-// app.listen(PORT, () => {
-//   console.log(`Server running on localhost:${PORT}`);
-// });
-//
-// module.exports = app;
+// Vercel requires module.exports for serverless functions
+module.exports = async (req, res) => {
+  // Connect to DB on cold start
+  if (!global.dbConnected) {
+    try {
+      await connectDB();
+      global.dbConnected = true;
+      console.log("Database connected successfully");
+    } catch (err) {
+      console.error("Database connection failed:", err);
+      return res.status(500).json({ error: "Database connection failed" });
+    }
+  }
 
-//-----------------------
+  // Pass request to Express
+  return app(req, res);
+};
 
-const PORT = 3000;
-const run = () => {
+// Local development server
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 3000;
   connectDB()
     .then(() => {
       console.log("Database connected successfully.");
@@ -81,9 +66,6 @@ const run = () => {
       });
     })
     .catch((err) => {
-      console.error("Error connecting to database. " + err.message);
+      console.error("Database connection failed:", err);
     });
-};
-
-run();
-module.exports = { run };
+}
