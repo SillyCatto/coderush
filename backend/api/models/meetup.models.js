@@ -17,14 +17,18 @@ const meetupSchema = new mongoose.Schema({
         required: [true, 'Seller is required']
     },
     location: {
-        type: {
-            type: String,
-            default: 'Point'
-        },
-        coordinates: {
+        lat: {
             type: [Number],
             required: [true, 'Coordinates are required'],
-        }
+        },
+        lng: {
+            type: [Number],
+            required: [true, 'Coordinates are required'],
+        },
+        name: {
+            type: String,
+            required: true,
+        },
     },
     status: {
         type: String,
