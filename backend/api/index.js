@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors"); // Import CORS
 const app = express();
 const { sendSuccess } = require("./utils/response");
-const ListingsRouter = require('./routes/listingRouter');
 // const cookieParser = require("cookie-parser");
 
 // Enable CORS for all routes (adjust options as needed)
@@ -18,6 +17,8 @@ app.use(cors()); // Basic usage (allows all origins)
 // } = require("./middlewares/errorHandler");
 
 const authRouter = require("./routes/authRouter");
+const userRouter = require("./routes/userRouter");
+const connectDB = require("./database/mongodb");
 // const profileRouter = require("./routes/profileRouter");
 // // const requestRouter = require("./routes/requestRouter");
 // const userRouter = require("./routes/userRouter");
@@ -27,6 +28,8 @@ const authRouter = require("./routes/authRouter");
 // app.use(cookieParser());
 //
 app.use("/", authRouter);
+app.use("/user", userRouter);
+
 // app.use("/profile", profileRouter);
 // app.use("/request", requestRouter);
 // app.use("/user", userRouter);
@@ -60,31 +63,27 @@ app.get("/test", (req, res) => {
   sendSuccess(res, 200, "OK", data);
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on localhost:${PORT}`);
-});
-
-app.get("/api/listings", (req, res) => {
-  const data = {
-    name: "GET all listings",
-  };
-  sendSuccess(res, 200, "OK", data);
-})
-
-module.exports = app;
+// app.listen(PORT, () => {
+//   console.log(`Server running on localhost:${PORT}`);
+// });
+//
+// module.exports = app;
 
 //-----------------------
 
-// const run = () => {
-//   connectDB()
-//     .then(() => {
-//       console.log("Database connected successfully.");
-//       app.listen(port, () => {
-//         console.log(`server running on port: ${port}`);
-//       });
-//     })
-//     .catch((err) => {
-//       console.error("Error connecting to database. " + err.message);
-//     });
-// };
+const PORT = 3000;
+const run = () => {
+  connectDB()
+    .then(() => {
+      console.log("Database connected successfully.");
+      app.listen(PORT, () => {
+        console.log(`server running on port: ${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error("Error connecting to database. " + err.message);
+    });
+};
+
+run();
+module.exports = { run };

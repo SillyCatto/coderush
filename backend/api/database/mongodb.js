@@ -1,19 +1,10 @@
-import mongoose from 'mongoose';
+require("dotenv").config();
+const mongoose = require("mongoose");
 
-// import { DB_URI, NODE_ENV} from "../config/env.js";
-// will be added later
+const uri = process.env.MONGODB_URL;
 
-if(!DB_URI) throw new Error('Please define the MONGODB_URI environment variable inside .env.<production/development>.local');
+const connectDB = async () => {
+  await mongoose.connect(uri);
+};
 
-const connectToDatabase = async () => {
-    try {
-        await mongoose.connect(DB_URI);
-
-        console.log(`Connected to MongoDB in ${NODE_ENV} mode`);
-    } catch (error) {
-        console.error('error connecting to database: ', error);
-        process.exit(1);
-    }
-}
-
-export default connectToDatabase;
+module.exports = connectDB;

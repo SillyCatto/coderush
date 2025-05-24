@@ -31,17 +31,24 @@ authRouter.post("/login", validateLoginInput, authUser, async (req, res) => {
       userID: user._id,
       name: user.name,
       email: user.email,
-      age: user.age,
-      gender: user.gender,
-      bio: user.bio,
-      photoURL: user.photoURL,
+      university: user.university,
+      dept: user.dept,
+      program: user.program,
+      year: user.year,
+      phone: user.phone,
+      dob: user.dob,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
 
     res
       .cookie("token", token)
-      .json({ message: "Login successful!", user: profileData });
+      .status(200)
+      .json({
+        success: true,
+        message: "Login successful!",
+        data: { user: profileData },
+      });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -52,7 +59,8 @@ authRouter.post("/logout", (req, res) => {
     .cookie("token", null, {
       expires: new Date(Date.now()),
     })
-    .send("Logout successful");
+    .status(200)
+    .json({ success: true, message: "Logout successful!" });
 });
 
 module.exports = authRouter;
