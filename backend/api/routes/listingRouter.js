@@ -197,4 +197,41 @@ router.post("/:id/bids", authUserToken, async (req, res) => {
   }
 });
 
+// @desc Delete a listing
+// @route DELETE /api/listings/delete/:id
+// @access Private
+router.delete("/delete/:id", authUserToken, async (req, res) => {
+  try {
+    const listing = await Listing.findById(req.params.id);
+
+    if (!listing) {
+      return res.status(404).json({
+        success: false,
+        error: "Listing not found",
+      });
+    }
+
+    // Check if user is the owner of the listing
+    if (listing.seller.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: "User not authorized to delete this listing",
+      });
+    }
+
+    await Listing.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: "Listing deleted successfully",
+    });
+  } catch (err) {
+    console.error("Error deleting listing:", err);
+    res.status(500).json({
+      success: false,
+      error: "Server error while deleting listing",
+    });
+  }
+});
+
 module.exports = router;
