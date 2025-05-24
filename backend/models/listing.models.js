@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const listingSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: true
+        required: [true, 'Title is required'],
     },
     description: String,
     type: {
