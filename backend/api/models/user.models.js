@@ -34,8 +34,7 @@ const userSchema = new mongoose.Schema(
     },
     program: {
       type: String,
-      enum: ["undergraduate", "graduate", "phd"],
-      default: "undergraduate",
+      required: [true, "Program is required"],
     },
     dob: {
       type: Date,
