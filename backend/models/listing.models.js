@@ -9,7 +9,7 @@ const listingSchema = new mongoose.Schema({
     type: {
         type: String,
         enum: ['item', 'service'],
-        required: true
+        required: [true, 'type is required']
     },
     price: Number,
     hourlyRate: Number,
@@ -29,12 +29,12 @@ const listingSchema = new mongoose.Schema({
     seller: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: [true, "seller is required"]
     },
     images: [String],
     status: {
         type: String,
-        enum: ['active', 'sold', 'expired'],
+        enum: ['active', 'sold', 'expired', 'updated', 'deleted'],
         default: 'active'
     },
     createdAt: {
@@ -47,4 +47,5 @@ const listingSchema = new mongoose.Schema({
 listingSchema.index({ title: 'text', description: 'text' });
 listingSchema.index({ category: 1, price: 1 });
 
-module.exports = mongoose.model('Listing', listingSchema);
+const Listing = mongoose.model('Listing', listingSchema);
+export default Listing;
