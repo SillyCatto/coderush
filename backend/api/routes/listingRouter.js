@@ -98,8 +98,15 @@ router.post(
   upload.array("images", 3),
   async (req, res) => {
     try {
-      const { title, description, type, price, category, visibility } =
-        req.body;
+      const {
+        title,
+        description,
+        type,
+        price,
+        condition,
+        category,
+        visibility,
+      } = req.body;
 
       if (!title || !type || !category) {
         return res
@@ -122,6 +129,7 @@ router.post(
         type,
         price: type === "item" ? price : null,
         hourlyRate: type === "service" ? price : null,
+        condition,
         category,
         visibility: visibility || "university",
         seller: req.user.id,
@@ -145,5 +153,48 @@ router.post(
     }
   },
 );
+
+// POST /api/listings/:id/bid
+router.post("/:id/bids", authUserToken, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const listing = await Listing.findById(req.params.id);
+
+    if (!listing || listing.status !== "active") {
+      return res.status(404).json({ error: "Listing not found or inactive" });
+    }
+
+    if (!listing.biddingEnabled) {
+      return res
+        .status(400)
+        .json({ error: "Bidding is not enabled for this listing" });
+    }
+
+    // Optional: Enforce that bid is higher than current highest
+    const currentHighest = Math.max(
+      ...listing.bids.map((b) => b.amount),
+      listing.price || 0,
+    );
+    if (amount <= currentHighest) {
+      return res.status(400).json({
+        error: `Bid must be higher than current highest: ${currentHighest}`,
+      });
+    }
+
+    listing.bids.push({
+      user: req.user.id,
+      amount,
+    });
+
+    await listing.save();
+
+    res
+      .status(200)
+      .json({ success: true, message: "Bid placed successfully", listing });
+  } catch (err) {
+    console.error("Error placing bid:", err);
+    res.status(500).json({ error: "Server error while placing bid" });
+  }
+});
 
 module.exports = router;
