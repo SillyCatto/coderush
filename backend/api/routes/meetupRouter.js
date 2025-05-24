@@ -9,9 +9,9 @@ const HTTP = require("../utils/httStatus");
 // Create a new meetup
 router.post("/add", authUserToken, async (req, res) => {
   try {
-    const { listingId, location, scheduledAt } = req.body;
+    const { listingId, meetupLocation, scheduledAt } = req.body;
 
-    if (!listingId || !location || !scheduledAt) {
+    if (!listingId || !meetupLocation || !scheduledAt) {
       return sendError(res, HTTP.BAD_REQUEST, "Missing required fields");
     }
 
@@ -26,8 +26,8 @@ router.post("/add", authUserToken, async (req, res) => {
       listing: listingId,
       buyer: req.user._id,
       seller: listing.seller,
-      location,
-      scheduledAt: new Date(scheduledAt)
+      meetupLocation,
+      scheduledAt: new Date(scheduledAt),
     });
 
     await meetup.save();
@@ -36,7 +36,7 @@ router.post("/add", authUserToken, async (req, res) => {
     await meetup.populate([
       { path: "seller", select: "name email " },
       { path: "buyer", select: "name email " },
-      { path: "listing", select: "title price images" }
+      { path: "listing", select: "title price images" },
     ]);
 
     sendSuccess(res, HTTP.CREATED, meetup);
@@ -50,15 +50,12 @@ router.post("/add", authUserToken, async (req, res) => {
 router.get("/myMeetups", authUserToken, async (req, res) => {
   try {
     const meetups = await Meetup.find({
-      $or: [
-        { buyer: req.user._id },
-        { seller: req.user._id }
-      ]
+      $or: [{ buyer: req.user._id }, { seller: req.user._id }],
     })
-    .populate("seller", "name email avatar")
-    .populate("buyer", "name email avatar")
-    .populate("listing", "title price images")
-    .sort({ createdAt: -1 });
+      .populate("seller", "name email avatar")
+      .populate("buyer", "name email avatar")
+      .populate("listing", "title price images")
+      .sort({ createdAt: -1 });
 
     sendSuccess(res, HTTP.OK, meetups);
   } catch (err) {
@@ -80,8 +77,15 @@ router.get("/:id", authUserToken, async (req, res) => {
     }
 
     // Check if the user is authorized to view this meetup
-    if (!meetup.buyer.equals(req.user._id) && !meetup.seller.equals(req.user._id)) {
-      return sendError(res, HTTP.FORBIDDEN, "Not authorized to view this meetup");
+    if (
+      !meetup.buyer.equals(req.user._id) &&
+      !meetup.seller.equals(req.user._id)
+    ) {
+      return sendError(
+        res,
+        HTTP.FORBIDDEN,
+        "Not authorized to view this meetup",
+      );
     }
 
     sendSuccess(res, HTTP.OK, meetup);
@@ -107,9 +111,15 @@ router.patch("/:id/status", authUserToken, async (req, res) => {
     }
 
     // Only the seller can confirm or mark as completed
-    if ((status === "confirmed" || status === "completed") &&
-        !meetup.seller.equals(req.user._id)) {
-      return sendError(res, HTTP.FORBIDDEN, "Only the seller can update this status");
+    if (
+      (status === "confirmed" || status === "completed") &&
+      !meetup.seller.equals(req.user._id)
+    ) {
+      return sendError(
+        res,
+        HTTP.FORBIDDEN,
+        "Only the seller can update this status",
+      );
     }
 
     // Update the status
@@ -119,7 +129,7 @@ router.patch("/:id/status", authUserToken, async (req, res) => {
     await meetup.populate([
       { path: "seller", select: "name email " },
       { path: "buyer", select: "name email " },
-      { path: "listing", select: "title price images" }
+      { path: "listing", select: "title price images" },
     ]);
 
     sendSuccess(res, HTTP.OK, meetup);
@@ -145,13 +155,24 @@ router.put("/:id", authUserToken, async (req, res) => {
     }
 
     // Only participants can update
-    if (!meetup.buyer.equals(req.user._id) && !meetup.seller.equals(req.user._id)) {
-      return sendError(res, HTTP.FORBIDDEN, "Not authorized to update this meetup");
+    if (
+      !meetup.buyer.equals(req.user._id) &&
+      !meetup.seller.equals(req.user._id)
+    ) {
+      return sendError(
+        res,
+        HTTP.FORBIDDEN,
+        "Not authorized to update this meetup",
+      );
     }
 
     // Cannot update completed meetups
     if (meetup.status === "completed") {
-      return sendError(res, HTTP.BAD_REQUEST, "Cannot update completed meetups");
+      return sendError(
+        res,
+        HTTP.BAD_REQUEST,
+        "Cannot update completed meetups",
+      );
     }
 
     // Update fields
@@ -163,7 +184,7 @@ router.put("/:id", authUserToken, async (req, res) => {
     await meetup.populate([
       { path: "seller", select: "name email avatar" },
       { path: "buyer", select: "name email avatar" },
-      { path: "listing", select: "title price images" }
+      { path: "listing", select: "title price images" },
     ]);
 
     sendSuccess(res, HTTP.OK, meetup);
@@ -183,8 +204,15 @@ router.delete("/delete/:id", authUserToken, async (req, res) => {
     }
 
     // Only participants can delete
-    if (!meetup.buyer.equals(req.user._id) && !meetup.seller.equals(req.user._id)) {
-      return sendError(res, HTTP.FORBIDDEN, "Not authorized to delete this meetup");
+    if (
+      !meetup.buyer.equals(req.user._id) &&
+      !meetup.seller.equals(req.user._id)
+    ) {
+      return sendError(
+        res,
+        HTTP.FORBIDDEN,
+        "Not authorized to delete this meetup",
+      );
     }
 
     await Meetup.findByIdAndDelete(req.params.id);
