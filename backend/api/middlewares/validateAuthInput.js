@@ -21,6 +21,7 @@ const validateSignupInput = (req, res, next) => {
     "program",
     "year",
     "phone",
+    "role",
     "dob",
   ];
 

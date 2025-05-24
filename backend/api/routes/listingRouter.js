@@ -30,51 +30,70 @@ router.get("/", authUserToken, async (req, res) => {
   try {
     const loggedInUser = req.user;
 
-    // Pagination configuration
+    // Pagination config
     const page = parseInt(req.query.page) || 1;
     let limit = parseInt(req.query.limit) || 10;
-    limit = limit > 10 ? 10 : limit; // More generous limit for listings
+    limit = limit > 10 ? 10 : limit;
     const skip = (page - 1) * limit;
 
-    // Get user's own listings to exclude
+    // Exclude user's own listings
     const userListings = await Listing.find({
       seller: loggedInUser._id,
     }).select("_id");
 
-    // Combine all listings to exclude
-    const excludedListingIds = [...userListings.map((l) => l._id)];
+    const excludedListingIds = userListings.map((l) => l._id);
 
-    // Base query with filters
+    // Build query dynamically
     const query = {
       _id: { $nin: excludedListingIds },
-      status: "active", // Only show active listings
+      status: "active",
     };
 
-    // Optional filters from query params
+    // ===== FILTERS START =====
+
+    if (req.query.type) {
+      query.type = req.query.type; // item | service
+    }
+
     if (req.query.category) {
       query.category = req.query.category;
     }
+
+    if (req.query.condition) {
+      query.condition = req.query.condition; // new | like_new | good | fair
+    }
+
     if (req.query.university) {
       query.university = req.query.university;
     }
+
+    if (req.query.visibility) {
+      query.visibility = req.query.visibility; // university | global
+    }
+
+    if (req.query.biddingEnabled !== undefined) {
+      query.biddingEnabled = req.query.biddingEnabled === "true";
+    }
+
     if (req.query.minPrice || req.query.maxPrice) {
       query.price = {};
       if (req.query.minPrice) query.price.$gte = Number(req.query.minPrice);
       if (req.query.maxPrice) query.price.$lte = Number(req.query.maxPrice);
     }
+
     if (req.query.search) {
       query.$text = { $search: req.query.search };
     }
 
-    // Get listings with populated seller info
+    // ===== FILTERS END =====
+
     const listings = await Listing.find(query)
       .populate("seller", "name university avatar")
-      .sort({ createdAt: -1 }) // Newest first
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    // Get total count for pagination
     const total = await Listing.countDocuments(query);
 
     res.json({
