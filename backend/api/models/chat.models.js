@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const messageSchema = new mongoose.Schema({
     content: String,
@@ -45,4 +45,4 @@ chatSchema.pre('save', function (next) {
 });
 
 const Chat = mongoose.model('Chat', chatSchema);
-export default Chat;
+module.exports = Chat;
