@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors"); // Import CORS
 const app = express();
+const { sendSuccess } = require("./utils/response");
 // const cookieParser = require("cookie-parser");
 
 // Enable CORS for all routes (adjust options as needed)
@@ -16,15 +17,15 @@ app.use(cors()); // Basic usage (allows all origins)
 // } = require("./middlewares/errorHandler");
 
 const authRouter = require("./routes/authRouter");
-const profileRouter = require("./routes/profileRouter");
-// const requestRouter = require("./routes/requestRouter");
-const userRouter = require("./routes/userRouter");
+// const profileRouter = require("./routes/profileRouter");
+// // const requestRouter = require("./routes/requestRouter");
+// const userRouter = require("./routes/userRouter");
 //
 // app.use(express.json());
 // app.use(jsonErrorHandler);
 // app.use(cookieParser());
 //
-// app.use("/", authRouter);
+app.use("/", authRouter);
 // app.use("/profile", profileRouter);
 // app.use("/request", requestRouter);
 // app.use("/user", userRouter);
@@ -47,6 +48,13 @@ const userRouter = require("./routes/userRouter");
 // Your API routes
 app.get("/api", (req, res) => {
   res.json({ message: "API is working with CORS!" });
+});
+
+app.get("/test", (req, res) => {
+  const data = {
+    name: "ABC",
+  };
+  sendSuccess(res, 200, "OK", data);
 });
 
 const PORT = 3000;

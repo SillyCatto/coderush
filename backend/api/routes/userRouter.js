@@ -1,7 +1,7 @@
 const express = require("express");
 const { authUserToken } = require("../middlewares/authToken");
 const ConnectionRequest = require("../models/connectionRequest");
-const User = require("../models/user");
+const User = require("../models/user.models");
 const {
   validateProfileEditInput,
 } = require("../middlewares/validateProfileInput");

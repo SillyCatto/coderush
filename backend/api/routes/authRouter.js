@@ -4,7 +4,7 @@ const {
   validateLoginInput,
 } = require("../middlewares/validateAuthInput");
 const { encryptPassword } = require("../utils/encryptor");
-const User = require("../models/user");
+const User = require("../models/user.models");
 const { authUser } = require("../middlewares/authLogin");
 
 const authRouter = express.Router();

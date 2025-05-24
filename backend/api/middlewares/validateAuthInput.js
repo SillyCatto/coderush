@@ -1,8 +1,19 @@
 const { isEmail, isStrongPassword } = require("validator");
+const { sendSuccess, sendError } = require("../utils/response");
 
 const validateSignupInput = (req, res, next) => {
   try {
-    const allowedSignupFields = ["name", "email", "password", "age", "gender"];
+    const allowedSignupFields = [
+      "name",
+      "email",
+      "password",
+      "university",
+      "dept",
+      "program",
+      "year",
+      "phone",
+      "dob",
+    ];
 
     const isSignupAllowed = Object.keys(req.body).every((field) => {
       return allowedSignupFields.includes(field);
@@ -26,7 +37,7 @@ const validateSignupInput = (req, res, next) => {
     }
     next();
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    sendError(res, 400, err.message);
   }
 };
 
@@ -42,7 +53,7 @@ const validateLoginInput = (req, res, next) => {
     }
     next();
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    sendError(res, 400, err.message);
   }
 };
 
