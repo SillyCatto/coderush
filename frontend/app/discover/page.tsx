@@ -11,6 +11,7 @@ import Link from "next/link"
 import { Book, Filter, Laptop, MessageCircle, Pencil, Search, SlidersHorizontal, Users, Zap } from "lucide-react"
 import Header from "@/app/components/layout/header"
 import Footer from "@/app/components/layout/footer"
+import { ChatPopup } from "@/app/components/chat/chat-popup";
 
 // Mock data for items
 const ITEMS_DATA = [
@@ -131,6 +132,12 @@ const SERVICES_DATA = [
 export default function DiscoverPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+
+
+    // Add these states for the chat popup
+  const [chatOpen, setChatOpen] = useState(false)
+  const [activeSeller, setActiveSeller] = useState<any>(null)
+  const [activeItem, setActiveItem] = useState<any>(null)
 
   // Filter items based on search and category
   const filteredItems = ITEMS_DATA.filter(item => {
