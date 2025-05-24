@@ -6,7 +6,7 @@ const validator = {
    */
   isUniversityEmail: (v) => {
     const universityDomains = [
-      'ut-dhaka\\.edu',
+      'iut-dhaka\\.edu',
       'du\\.ac\\.bd',
       'cu\\.ac\\.bd',
       'ku\\.ac\\.bd',
