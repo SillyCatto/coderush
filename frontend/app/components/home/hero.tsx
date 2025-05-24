@@ -14,10 +14,10 @@ export default function Hero() {
               Your campus marketplace for textbooks, electronics, dorm essentials, and more - all for better prices than retail.
             </p>
             <div className="flex gap-4 pt-4">
-              <Link href="/marketplace" className="px-6 py-3 rounded-full bg-foreground text-background font-medium hover:bg-gray-800 dark:hover:bg-gray-200">
+              <Link href="/discover" className="px-6 py-3 rounded-full bg-foreground text-background font-medium hover:bg-gray-800 dark:hover:bg-gray-200">
                 Browse Products
               </Link>
-              <Link href="/dashboard/products/new" className="px-6 py-3 rounded-full border border-gray-300 font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-900">
+              <Link href="/sell" className="px-6 py-3 rounded-full border border-gray-300 font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-900">
                 Sell an Item
               </Link>
             </div>

@@ -16,23 +16,23 @@ export default function Categories() {
     <section className="py-16 bg-gray-50 dark:bg-gray-950">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Popular Categories</h2>
+          <h2 className="text-3xl font-bold mb-4">Buy or Sell What You Want</h2>
           <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Find exactly what you need for your student life
+            Explore our categories to find exactly what you need or list your items for sale. 
+            Connect with fellow students and make the most of global and your campus marketplace!
           </p>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {categories.map((category, index) => (
-            <Link 
-              href={`/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`} 
+            {categories.map((category, index) => (
+            <div 
               key={index} 
-              className={`${category.color} p-6 rounded-xl flex flex-col items-center justify-center text-center h-40 transition-transform hover:scale-105`}
+              className={`${category.color} p-6 rounded-xl flex flex-col items-center justify-center text-center h-40 transition-transform hover:scale-105 cursor-pointer`}
             >
               <div className="text-4xl mb-2">{category.icon}</div>
               <h3 className="font-medium">{category.name}</h3>
-            </Link>
-          ))}
+            </div>
+            ))}
         </div>
       </div>
     </section>

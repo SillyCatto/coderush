@@ -20,7 +20,7 @@ export default function Header() {
           <Link href="/" className="text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300">Home</Link>
           <Link href="/discover" className="text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300">Discover</Link>
           <Link href="/meetInCampus" className="text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300">Meet in Campus</Link>
-          <Link href="/how-it-works" className="text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300">How It Works</Link>
+          <Link href="/sell" className="text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300">Sell</Link>
         </nav>
         
         <div className="flex items-center gap-4">
