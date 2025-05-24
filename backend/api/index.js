@@ -19,7 +19,7 @@ app.use(
   cors({
     origin: [
       process.env.FRONTEND_URL,
-      "http://localhost:5173", // For local development
+      "http://localhost:3000", // For local development
     ],
     credentials: true,
   }),
@@ -67,7 +67,7 @@ module.exports = async (req, res) => {
 
 // Local development server
 if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 4000;
   connectDB()
     .then(() => {
       console.log("Database connected successfully.");
