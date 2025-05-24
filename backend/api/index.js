@@ -7,6 +7,7 @@ const connectDB = require("./database/mongodb");
 // Routes
 const authRouter = require("./routes/authRouter");
 const userRouter = require("./routes/userRouter");
+const adminAuthRouter = require("./routes/adminAuthRouter");
 const listingRouter = require("./routes/listingRouter");
 const uploadRouter = require("./routes/uploadRouter");
 
@@ -28,6 +29,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/listings", listingRouter);
 app.use("/api/upload", uploadRouter);
+app.use("/api/adminAuth", adminAuthRouter);
 
 // Health check endpoint
 app.get("/api", (req, res) => {

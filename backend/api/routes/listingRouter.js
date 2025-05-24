@@ -9,7 +9,10 @@ const upload = require("../utils/multer"); // For image uploads
 // @access Private
 router.get("/:userId", authUserToken, async (req, res) => {
   try {
-    const listings = await Listing.find({ seller: req.user.id })
+    // Check if we're looking for the current user's listings or someone else's
+    const sellerId = req.params.userId === 'me' ? req.user.id : req.params.userId;
+
+    const listings = await Listing.find({ seller: sellerId })
       .select("-__v") // Exclude version key
       .lean(); // Convert to plain JS object
 
