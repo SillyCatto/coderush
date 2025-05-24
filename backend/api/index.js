@@ -8,6 +8,7 @@ const connectDB = require("./database/mongodb");
 const authRouter = require("./routes/authRouter");
 const userRouter = require("./routes/userRouter");
 const listingRouter = require("./routes/listingRouter");
+const uploadRouter = require("./routes/uploadRouter");
 
 // Middleware
 app.use(
@@ -26,6 +27,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/listings", listingRouter);
+app.use("/api/upload", uploadRouter);
 
 // Health check endpoint
 app.get("/api", (req, res) => {
