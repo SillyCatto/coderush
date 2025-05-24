@@ -11,6 +11,7 @@ const adminAuthRouter = require("./routes/adminAuthRouter");
 const listingRouter = require("./routes/listingRouter");
 const uploadRouter = require("./routes/uploadRouter");
 const bidRouter = require("./routes/bidRouter");
+const meetUpRouter = require("./routes/meetupRouter");
 
 // Middleware
 app.use(
@@ -32,6 +33,7 @@ app.use("/api/listings", listingRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/adminAuth", adminAuthRouter);
 app.use("/api/bid", bidRouter);
+app.use("/api/meet", meetUpRouter);
 
 // Health check endpoint
 app.get("/api", (req, res) => {

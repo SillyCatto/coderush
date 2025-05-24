@@ -26,11 +26,20 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "University is required"],
     },
-    department: String,
+    dept: String,
     year: Number,
     phone: {
       type: String,
       select: false,
+    },
+    program: {
+      type: String,
+      enum: ["undergraduate", "graduate", "phd"],
+      default: "undergraduate",
+    },
+    dob: {
+      type: Date,
+      required: [true, "Date of birth is required"],
     },
     role: {
       type: String,

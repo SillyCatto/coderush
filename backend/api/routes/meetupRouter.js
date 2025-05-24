@@ -117,8 +117,8 @@ router.patch("/:id/status", authUserToken, async (req, res) => {
     await meetup.save();
 
     await meetup.populate([
-      { path: "seller", select: "name email avatar" },
-      { path: "buyer", select: "name email avatar" },
+      { path: "seller", select: "name email " },
+      { path: "buyer", select: "name email " },
       { path: "listing", select: "title price images" }
     ]);
 
