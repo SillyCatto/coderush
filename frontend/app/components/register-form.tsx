@@ -112,42 +112,45 @@ export function RegisterForm({
                 />
               </div>
 
-              {/* Optional Fields */}
+             
               <div className="grid gap-2">
-                <Label htmlFor="university">University</Label>
+                <Label htmlFor="university">{requiredLabel("University")}</Label>
                 <Input
                   id="university"
                   type="text"
                   placeholder="e.g. IUT"
                   value={formData.university}
                   onChange={handleChange}
+                  required
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="department">Department</Label>
+                <Label htmlFor="department">{requiredLabel("Department")}</Label>
                 <Input
                   id="department"
                   type="text"
                   placeholder="e.g. CSE"
                   value={formData.department}
                   onChange={handleChange}
+                  required
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="program">Program</Label>
+                <Label htmlFor="program">{requiredLabel("Program")}</Label>
                 <Input
                   id="program"
                   type="text"
                   placeholder="e.g. BSc"
                   value={formData.program}
                   onChange={handleChange}
+                  required
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="year">Year of Study</Label>
+                <Label htmlFor="year">{requiredLabel("Year of Study")}</Label>
                 <Input
                   id="year"
                   type="number"
@@ -156,6 +159,7 @@ export function RegisterForm({
                   onChange={handleChange}
                   min={1}
                   max={6}
+                  required
                 />
               </div>
 
@@ -166,10 +170,7 @@ export function RegisterForm({
           </form>
         </CardContent>
       </Card>
-      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary  ">
-        By clicking register, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
-      </div>
+ 
     </div>
   )
 }
