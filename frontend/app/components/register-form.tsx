@@ -1,3 +1,6 @@
+"use client"
+
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,121 +17,158 @@ export function RegisterForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    phone: "",
+    dob: "",
+    university: "",
+    department: "",
+    program: "",
+    year: "",
+  })
+
+  const universityEmailRegex = /@(iut-dhaka\.edu|du\.ac\.bd|cu\.ac\.bd|ku\.ac\.bd|ru\.ac\.bd|ju\.ac\.bd|nstu\.edu\.bd|bracu\.ac\.bd|nsu\.edu\.bd|aiub\.edu|ewubd\.edu|iub\.edu\.bd|aust\.edu|uoda\.edu\.bd|diu\.edu\.bd|uap-bd\.edu|uiu\.ac\.bd|sau\.edu\.bd|lus\.ac\.bd|sub\.edu\.bd|pstu\.ac\.bd|hstu\.ac\.bd|mstu\.edu\.bd|bsmrstu\.edu\.bd|bup\.edu\.bd|duet\.ac\.bd|just\.edu\.bd|ruet\.ac\.bd|kuet\.ac\.bd|cuet\.ac\.bd|buet\.ac\.bd)$/i
+
+  const isEmailValid = universityEmailRegex.test(formData.email)
+  const isFormValid =
+    isEmailValid &&
+    formData.password.trim() !== "" &&
+    formData.phone.trim() !== "" &&
+    formData.dob.trim() !== ""
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target
+    setFormData((prev) => ({ ...prev, [id]: value }))
+  }
+
+  const requiredLabel = (text: string) => (
+    <span>
+      {text} <span className="text-red-500">*</span>
+    </span>
+  )
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Create Your Account</CardTitle>
+          <CardTitle className="text-xl">Register</CardTitle>
           <CardDescription>
-            Register with your university or social account
+            Sign up using your official university email address
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form>
             <div className="grid gap-6">
-              <div className="flex flex-col gap-4">
-                <Button variant="outline" className="w-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path
-                      d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
-                      fill="currentColor"
-                    />
-                  </svg>
-                  Register with Apple
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path
-                      d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                  Register with Google
-                </Button>
+              {/* Required Fields */}
+              <div className="grid gap-2">
+                <Label htmlFor="email">{requiredLabel("Email")}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="example@iut-dhaka.edu"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+                {!isEmailValid && formData.email !== "" && (
+                  <p className="text-sm text-red-500">
+                    Please enter a valid university email address.
+                  </p>
+                )}
               </div>
-              <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-                <span className="relative z-10 bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
+
+              <div className="grid gap-2">
+                <Label htmlFor="password">{requiredLabel("Password")}</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
               </div>
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" type="text" required placeholder="John Doe" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">University Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    placeholder="student@university.edu"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" required />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="department">Department</Label>
-                  <Input
-                    id="department"
-                    type="text"
-                    placeholder="CSE, EEE, etc."
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="program">Program</Label>
-                  <Input
-                    id="program"
-                    type="text"
-                    placeholder="BSc in Software Engineering"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="year">Year of Study</Label>
-                  <Input
-                    id="year"
-                    type="number"
-                    min="1"
-                    max="5"
-                    placeholder="2"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+8801XXXXXXXXX"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="dob">Date of Birth</Label>
-                  <Input id="dob" type="date" required />
-                </div>
-                <Button type="submit" className="w-full">
-                  Register
-                </Button>
+
+              <div className="grid gap-2">
+                <Label htmlFor="phone">{requiredLabel("Phone Number")}</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="01XXXXXXXXX"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                />
               </div>
-              <div className="text-center text-sm">
-                Already have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
-                  Login
-                </a>
+
+              <div className="grid gap-2">
+                <Label htmlFor="dob">{requiredLabel("Date of Birth")}</Label>
+                <Input
+                  id="dob"
+                  type="date"
+                  value={formData.dob}
+                  onChange={handleChange}
+                  required
+                />
               </div>
+
+              {/* Optional Fields */}
+              <div className="grid gap-2">
+                <Label htmlFor="university">University</Label>
+                <Input
+                  id="university"
+                  type="text"
+                  placeholder="e.g. IUT"
+                  value={formData.university}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="department">Department</Label>
+                <Input
+                  id="department"
+                  type="text"
+                  placeholder="e.g. CSE"
+                  value={formData.department}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="program">Program</Label>
+                <Input
+                  id="program"
+                  type="text"
+                  placeholder="e.g. BSc"
+                  value={formData.program}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="year">Year of Study</Label>
+                <Input
+                  id="year"
+                  type="number"
+                  placeholder="e.g. 2"
+                  value={formData.year}
+                  onChange={handleChange}
+                  min={1}
+                  max={6}
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={!isFormValid}>
+                Register
+              </Button>
             </div>
           </form>
         </CardContent>
       </Card>
-      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
-        By clicking register, you agree to our{" "}
-        <a href="#">Terms of Service</a> and{" "}
-        <a href="#">Privacy Policy</a>.
+      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary  ">
+        By clicking register, you agree to our <a href="#">Terms of Service</a>{" "}
+        and <a href="#">Privacy Policy</a>.
       </div>
     </div>
   )
