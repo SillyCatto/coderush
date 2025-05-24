@@ -15,6 +15,7 @@ import Footer from "@/app/components/layout/footer"
 import { ChatPopup } from "@/app/components/chat/chat-popup"
 import { LocationPicker } from "@/app/components/map/location-picker"
 
+export const dynamic = 'force-dynamic';
 // Mock data for items
 const ITEMS_DATA = [
   {

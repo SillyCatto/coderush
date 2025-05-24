@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -8,68 +8,25 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { MapPin, Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import dynamic from "next/dynamic"
-import { LeafletCss } from "./leaflet-css"
-import L from "leaflet"
-
-// Fix for marker icons
-const fixMarkerIcon = () => {
-  // Only run on client
-  if (typeof window !== "undefined") {
-    delete (L.Icon.Default.prototype as any)._getIconUrl;
-    
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-      iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-      shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png"
-    });
-  }
-};
-
-// Dynamically import react-leaflet components to avoid SSR issues
-const MapContainer = dynamic(
-  () => import('react-leaflet').then(mod => mod.MapContainer),
-  { ssr: false }
-)
-const TileLayer = dynamic(
-  () => import('react-leaflet').then(mod => mod.TileLayer),
-  { ssr: false }
-)
-const Marker = dynamic(
-  () => import('react-leaflet').then(mod => mod.Marker),
-  { ssr: false }
-)
-const Popup = dynamic(
-  () => import('react-leaflet').then(mod => mod.Popup),
-  { ssr: false }
-)
-// Import useMapEvents hook directly
-import { useMapEvents } from 'react-leaflet';
-
-// Map click handler component
-function MapClickHandler({ onClick }: { onClick: (e: any) => void }) {
-  useMapEvents({
-    click: onClick
-  })
-  return null
-}
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { MapPin } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import dynamic from "next/dynamic";
+import { LeafletCss } from "./leaflet-css";
 
 // Default center - set to a general university location
 const defaultCenter = {
   lat: 40.1092, 
   lng: -88.2272
-}
+};
 
-type LocationPickerProps = {
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: (location: { lat: number; lng: number; name?: string }) => void
-  sellerName: string
-  itemTitle: string
+export interface LocationPickerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (location: { lat: number; lng: number; name?: string }) => void;
+  sellerName: string;
+  itemTitle: string;
 }
 
 export function LocationPicker({ 
@@ -79,33 +36,67 @@ export function LocationPicker({
   sellerName,
   itemTitle
 }: LocationPickerProps) {
-  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; name?: string } | null>(null)
-  const [mapReady, setMapReady] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [isSearching, setIsSearching] = useState(false)
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; name?: string } | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [leafletModules, setLeafletModules] = useState<{
+    MapContainer?: any;
+    TileLayer?: any;
+    Marker?: any;
+    Popup?: any;
+    useMapEvents?: any;
+  }>({});
 
-  // Initialize map on client side
+  // Load Leaflet only on client side
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      // Fix marker icons when component mounts
-      fixMarkerIcon();
-      setMapReady(true)
-      
-      // Clean up function
-      return () => {
-        setSelectedLocation(null)
+    const loadLeafletModules = async () => {
+      try {
+        // Import all needed modules
+        const L = await import("leaflet");
+        const reactLeaflet = await import("react-leaflet");
+        
+        // Fix marker icons
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+          iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+          shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+        });
+        
+        // Set all modules in state
+        setLeafletModules({
+          MapContainer: reactLeaflet.MapContainer,
+          TileLayer: reactLeaflet.TileLayer,
+          Marker: reactLeaflet.Marker,
+          Popup: reactLeaflet.Popup,
+          useMapEvents: reactLeaflet.useMapEvents,
+        });
+        
+        setMapReady(true);
+      } catch (error) {
+        console.error("Error loading Leaflet modules:", error);
       }
+    };
+
+    // Only run on client
+    if (typeof window !== "undefined") {
+      loadLeafletModules();
     }
-  }, [])
+    
+    return () => {
+      setSelectedLocation(null);
+    };
+  }, []);
 
   // Handle map click
   const handleMapClick = (e: any) => {
     setSelectedLocation({
       lat: e.latlng.lat,
-      lng: e.latlng.lng
-    })
-  }
+      lng: e.latlng.lng,
+    });
+  };
 
   // Handle search
   const handleSearch = async () => {
@@ -151,11 +142,20 @@ export function LocationPicker({
   // Handle confirmation
   const handleConfirm = () => {
     if (selectedLocation) {
-      onConfirm(selectedLocation)
+      onConfirm(selectedLocation);
     }
-  }
+  };
 
-  if (!isOpen) return null
+  // Map click handler component defined inline to avoid SSR issues
+  const MapClickHandler = mapReady && leafletModules.useMapEvents ? 
+    ({ onClick }: { onClick: (e: any) => void }) => {
+      const mapEvents = leafletModules.useMapEvents({
+        click: onClick
+      });
+      return null;
+    } : () => null;
+
+  if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -215,31 +215,37 @@ export function LocationPicker({
         ) : (
           <>
             <div className="h-[400px] w-full relative">
-              <MapContainer
-                center={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [defaultCenter.lat, defaultCenter.lng]}
-                zoom={selectedLocation ? 16 : 13}
-                style={{ height: "100%", width: "100%" }}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                
-                {/* Selected location marker */}
-                {selectedLocation && (
-                  <Marker position={[selectedLocation.lat, selectedLocation.lng]}>
-                    <Popup>
-                      <div>
-                        <strong>Meeting Point</strong>
-                        {selectedLocation.name && <p className="text-sm">{selectedLocation.name}</p>}
-                      </div>
-                    </Popup>
-                  </Marker>
-                )}
-                
-                {/* Map click handler */}
-                <MapClickHandler onClick={handleMapClick} />
-              </MapContainer>
+              {leafletModules.MapContainer && (
+                <leafletModules.MapContainer
+                  center={
+                    selectedLocation 
+                      ? [selectedLocation.lat, selectedLocation.lng] 
+                      : [defaultCenter.lat, defaultCenter.lng]
+                  }
+                  zoom={selectedLocation ? 16 : 13}
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <leafletModules.TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  
+                  {/* Selected location marker */}
+                  {selectedLocation && (
+                    <leafletModules.Marker position={[selectedLocation.lat, selectedLocation.lng]}>
+                      <leafletModules.Popup>
+                        <div>
+                          <strong>Meeting Point</strong>
+                          {selectedLocation.name && <p className="text-sm">{selectedLocation.name}</p>}
+                        </div>
+                      </leafletModules.Popup>
+                    </leafletModules.Marker>
+                  )}
+                  
+                  {/* Map click handler */}
+                  <MapClickHandler onClick={handleMapClick} />
+                </leafletModules.MapContainer>
+              )}
             </div>
 
             {selectedLocation && (
@@ -271,5 +277,5 @@ export function LocationPicker({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
