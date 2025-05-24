@@ -49,6 +49,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    share: {
+      type: Boolean,
+      default: false,
+    }
   },
   { timestamps: true },
 );

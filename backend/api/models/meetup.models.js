@@ -18,11 +18,11 @@ const meetupSchema = new mongoose.Schema({
     },
     location: {
         lat: {
-            type: [Number],
+            type: Number,
             required: [true, 'Coordinates are required'],
         },
         lng: {
-            type: [Number],
+            type: Number,
             required: [true, 'Coordinates are required'],
         },
         name: {
@@ -38,6 +38,6 @@ const meetupSchema = new mongoose.Schema({
     scheduledAt: Date
 }, { timestamps: true });
 
-meetupSchema.index({ location: '2dsphere' });
+// meetupSchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('Meetup', meetupSchema);
