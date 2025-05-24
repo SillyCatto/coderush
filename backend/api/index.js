@@ -17,18 +17,20 @@ app.use(cors()); // Basic usage (allows all origins)
 // } = require("./middlewares/errorHandler");
 
 const authRouter = require("./routes/authRouter");
+const userRouter = require("./routes/userRouter");
+const connectDB = require("./database/mongodb");
 // const profileRouter = require("./routes/profileRouter");
 // // const requestRouter = require("./routes/requestRouter");
-// const userRouter = require("./routes/userRouter");
 //
-// app.use(express.json());
+app.use(express.json());
 // app.use(jsonErrorHandler);
 // app.use(cookieParser());
 //
 app.use("/", authRouter);
+app.use("/user", userRouter);
+
 // app.use("/profile", profileRouter);
 // app.use("/request", requestRouter);
-// app.use("/user", userRouter);
 //
 // app.use(routeNotFound);
 // app.use(globalErrorHandler);
@@ -57,24 +59,27 @@ app.get("/test", (req, res) => {
   sendSuccess(res, 200, "OK", data);
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on localhost:${PORT}`);
-});
-
-module.exports = app;
+// app.listen(PORT, () => {
+//   console.log(`Server running on localhost:${PORT}`);
+// });
+//
+// module.exports = app;
 
 //-----------------------
 
-// const run = () => {
-//   connectDB()
-//     .then(() => {
-//       console.log("Database connected successfully.");
-//       app.listen(port, () => {
-//         console.log(`server running on port: ${port}`);
-//       });
-//     })
-//     .catch((err) => {
-//       console.error("Error connecting to database. " + err.message);
-//     });
-// };
+const PORT = 3000;
+const run = () => {
+  connectDB()
+    .then(() => {
+      console.log("Database connected successfully.");
+      app.listen(PORT, () => {
+        console.log(`server running on port: ${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error("Error connecting to database. " + err.message);
+    });
+};
+
+run();
+module.exports = { run };

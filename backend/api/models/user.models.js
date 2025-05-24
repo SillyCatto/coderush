@@ -1,8 +1,6 @@
 const mongoose = require("mongoose");
-// const validator = require("validator");
 const bcrypt = require("bcrypt");
 const { generateToken } = require("../utils/jwt");
-// import validator from 'validator'; // is this correct?
 
 const userSchema = new mongoose.Schema(
   {
