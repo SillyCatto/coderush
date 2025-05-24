@@ -32,6 +32,11 @@ io.on("connection", (socket) => {
                 message,
                 timestamp: new Date(),
             });
+
+            // Emit delivery confirmation back to sender
+            socket.emit("message-delivered", { to, success: true });
+        } else {
+            socket.emit("message-delivered", { to, success: false, error: "User not connected" });
         }
     });
 
