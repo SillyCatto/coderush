@@ -9,6 +9,7 @@ const authRouter = require("./routes/authRouter");
 const userRouter = require("./routes/userRouter");
 const listingRouter = require("./routes/listingRouter");
 const uploadRouter = require("./routes/uploadRouter");
+const bidRouter = require("./routes/bidRouter");
 
 // Middleware
 app.use(
@@ -28,6 +29,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/listings", listingRouter);
 app.use("/api/upload", uploadRouter);
+app.use("/api/bid", bidRouter);
 
 // Health check endpoint
 app.get("/api", (req, res) => {

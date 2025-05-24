@@ -125,6 +125,7 @@ router.post(
         condition,
         category,
         visibility,
+        biddingEnabled,
       } = req.body;
 
       if (!title || !type || !category) {
@@ -136,6 +137,7 @@ router.post(
       if (type === "item" && !price) {
         return res.status(400).json({ error: "Price is required for items" });
       }
+
       if (type === "service" && !price) {
         return res
           .status(400)
@@ -153,7 +155,8 @@ router.post(
         visibility: visibility || "university",
         seller: req.user.id,
         university: req.user.university,
-        images: req.files?.map((file) => file.path) || [], // ✅ Cloudinary URLs
+        images: req.files?.map((file) => file.path) || [],
+        biddingEnabled: biddingEnabled === "true",
       });
 
       const savedListing = await newListing.save();
@@ -172,48 +175,5 @@ router.post(
     }
   },
 );
-
-// POST /api/listings/:id/bid
-router.post("/:id/bids", authUserToken, async (req, res) => {
-  try {
-    const { amount } = req.body;
-    const listing = await Listing.findById(req.params.id);
-
-    if (!listing || listing.status !== "active") {
-      return res.status(404).json({ error: "Listing not found or inactive" });
-    }
-
-    if (!listing.biddingEnabled) {
-      return res
-        .status(400)
-        .json({ error: "Bidding is not enabled for this listing" });
-    }
-
-    // Optional: Enforce that bid is higher than current highest
-    const currentHighest = Math.max(
-      ...listing.bids.map((b) => b.amount),
-      listing.price || 0,
-    );
-    if (amount <= currentHighest) {
-      return res.status(400).json({
-        error: `Bid must be higher than current highest: ${currentHighest}`,
-      });
-    }
-
-    listing.bids.push({
-      user: req.user.id,
-      amount,
-    });
-
-    await listing.save();
-
-    res
-      .status(200)
-      .json({ success: true, message: "Bid placed successfully", listing });
-  } catch (err) {
-    console.error("Error placing bid:", err);
-    res.status(500).json({ error: "Server error while placing bid" });
-  }
-});
 
 module.exports = router;
