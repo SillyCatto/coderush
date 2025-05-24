@@ -1,31 +1,30 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Listing = require('../models/listing.models');
-const { authUserToken } = require('../middlewares/authToken'); // auth
-const upload = require('../utils/multer'); // For image uploads
+const Listing = require("../models/listing.models");
+const { authUserToken } = require("../middlewares/authToken"); // auth
+const upload = require("../utils/multer"); // For image uploads
 
 // @desc Get current user's listings
 // @route GET /api/listings
 // @access Private
-router.get('/:userId', authUserToken, async (req, res) => {
+router.get("/:userId", authUserToken, async (req, res) => {
   try {
     const listings = await Listing.find({ seller: req.user.id })
-      .select('-__v') // Exclude version key
+      .select("-__v") // Exclude version key
       .lean(); // Convert to plain JS object
 
     res.status(200).json({
       success: true,
       count: listings.length,
-      data: listings
+      data: listings,
     });
   } catch (err) {
     res.status(500).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 });
-
 
 router.get("/", authUserToken, async (req, res) => {
   try {
@@ -39,18 +38,16 @@ router.get("/", authUserToken, async (req, res) => {
 
     // Get user's own listings to exclude
     const userListings = await Listing.find({
-      seller: loggedInUser._id
+      seller: loggedInUser._id,
     }).select("_id");
 
     // Combine all listings to exclude
-    const excludedListingIds = [
-      ...userListings.map(l => l._id)
-    ];
+    const excludedListingIds = [...userListings.map((l) => l._id)];
 
     // Base query with filters
     const query = {
       _id: { $nin: excludedListingIds },
-      status: "active" // Only show active listings
+      status: "active", // Only show active listings
     };
 
     // Optional filters from query params
@@ -86,8 +83,8 @@ router.get("/", authUserToken, async (req, res) => {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
         totalItems: total,
-        itemsPerPage: limit
-      }
+        itemsPerPage: limit,
+      },
     });
   } catch (err) {
     console.error("Error fetching listings:", err);
@@ -95,54 +92,58 @@ router.get("/", authUserToken, async (req, res) => {
   }
 });
 
-router.post('/add', authUserToken, upload.array('images', 5), async (req, res) => {
-  try {
-    // Validate required fields
-    const { title, description, type, price, category, visibility } = req.body;
-    if (!title || !type || !category) {
-      return res.status(400).json({ error: 'Title, type, and category are required' });
+router.post(
+  "/add",
+  authUserToken,
+  upload.array("images", 3),
+  async (req, res) => {
+    try {
+      const { title, description, type, price, category, visibility } =
+        req.body;
+
+      if (!title || !type || !category) {
+        return res
+          .status(400)
+          .json({ error: "Title, type, and category are required" });
+      }
+
+      if (type === "item" && !price) {
+        return res.status(400).json({ error: "Price is required for items" });
+      }
+      if (type === "service" && !price) {
+        return res
+          .status(400)
+          .json({ error: "Hourly rate is required for services" });
+      }
+
+      const newListing = new Listing({
+        title,
+        description,
+        type,
+        price: type === "item" ? price : null,
+        hourlyRate: type === "service" ? price : null,
+        category,
+        visibility: visibility || "university",
+        seller: req.user.id,
+        university: req.user.university,
+        images: req.files?.map((file) => file.path) || [], // ✅ Cloudinary URLs
+      });
+
+      const savedListing = await newListing.save();
+      await savedListing.populate("seller", "name university");
+
+      res.status(201).json({
+        success: true,
+        data: savedListing,
+      });
+    } catch (err) {
+      console.error("Error creating listing:", err);
+      res.status(500).json({
+        success: false,
+        error: "Server error while creating listing",
+      });
     }
-
-    // Validate price based on listing type
-    if (type === 'item' && !price) {
-      return res.status(400).json({ error: 'Price is required for items' });
-    }
-    if (type === 'service' && !price) {
-      return res.status(400).json({ error: 'Hourly rate is required for services' });
-    }
-
-    // Create new listing
-    const newListing = new Listing({
-      title,
-      description,
-      type,
-      price: type === 'item' ? price : null,
-      hourlyRate: type === 'service' ? price : null,
-      category,
-      visibility: visibility || 'university', // Default to university-only
-      seller: req.user.id,
-      university: req.user.university, // Auto-set from user's profile
-      images: req.files?.map(file => `/uploads/${file.filename}`) || []
-    });
-
-    // Save to database
-    const savedListing = await newListing.save();
-
-    // Populate seller info in response
-    await savedListing.populate('seller', 'name university');
-
-    res.status(201).json({
-      success: true,
-      data: savedListing
-    });
-
-  } catch (err) {
-    console.error('Error creating listing:', err);
-    res.status(500).json({
-      success: false,
-      error: 'Server error while creating listing'
-    });
-  }
-});
+  },
+);
 
 module.exports = router;
