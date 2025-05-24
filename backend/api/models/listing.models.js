@@ -46,6 +46,7 @@ const listingSchema = new mongoose.Schema({
 
 // Indexes for faster searching
 listingSchema.index({ title: 'text', description: 'text' });
-listingSchema.index({ category: 1, price: 1 });
+listingSchema.index({ category: 1, university: 1, price: 1 });
+listingSchema.index({ seller: 1, status: 1 });
 
 module.exports = mongoose.model('Listing', listingSchema);
