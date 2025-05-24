@@ -1,60 +1,69 @@
 const { isEmail, isStrongPassword } = require("validator");
-const { sendSuccess, sendError } = require("../utils/response");
+const { sendError } = require("../utils/response");
+const HTTP = require("../utils/httStatus");
 
 const validateSignupInput = (req, res, next) => {
-  try {
-    const allowedSignupFields = [
-      "name",
-      "email",
-      "password",
-      "university",
-      "dept",
-      "program",
-      "year",
-      "phone",
-      "dob",
-    ];
+  const allowedSignupFields = [
+    "name",
+    "email",
+    "password",
+    "university",
+    "dept",
+    "program",
+    "year",
+    "phone",
+    "dob",
+  ];
 
-    const isSignupAllowed = Object.keys(req.body).every((field) => {
-      return allowedSignupFields.includes(field);
-    });
-
-    if (!isSignupAllowed) throw new Error("Invalid signup request");
-
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password)
-      throw new Error("username, email and password is required to signup");
-
-    if (!name) {
-      throw new Error("User name is required");
-    } else if (!isEmail(email)) {
-      throw new Error("Invalid email: " + email);
-    } else if (!isStrongPassword(password, { minLength: 6 })) {
-      throw new Error(
-        "Please enter a strong password. Password must contain at least 1 lowercase, 1 uppercase, 1 digit, 1 symbol and at least of 6 characters",
-      );
-    }
-    next();
-  } catch (err) {
-    sendError(res, 400, err.message);
+  // Check for extra fields
+  const extraFields = Object.keys(req.body).filter(
+    (field) => !allowedSignupFields.includes(field),
+  );
+  if (extraFields.length > 0) {
+    return sendError(
+      res,
+      HTTP.BAD_REQUEST,
+      `Invalid fields detected: ${extraFields.join(", ")}`,
+    );
   }
+
+  // Check for missing fields
+  const missingFields = allowedSignupFields.filter((field) => !req.body[field]);
+  if (missingFields.length > 0) {
+    return sendError(
+      res,
+      HTTP.BAD_REQUEST,
+      `Missing required fields: ${missingFields.join(", ")}`,
+    );
+  }
+
+  // If all validations pass
+  next();
 };
 
 const validateLoginInput = (req, res, next) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !isEmail(email)) {
-      throw new Error("Please enter a valid email address.");
-    }
+  const { email, password } = req.body;
 
-    if (!password) {
-      throw new Error("Password is required to log in.");
-    }
-    next();
-  } catch (err) {
-    sendError(res, 400, err.message);
+  // Validate email
+  if (!email) {
+    return sendError(res, HTTP.BAD_REQUEST, "Email address is required");
   }
+
+  if (!isEmail(email)) {
+    return sendError(
+      res,
+      HTTP.BAD_REQUEST,
+      "Please enter a valid email address",
+    );
+  }
+
+  // Validate password
+  if (!password) {
+    return sendError(res, HTTP.BAD_REQUEST, "Password is required");
+  }
+
+  // If all validations pass
+  next();
 };
 
 module.exports = {
