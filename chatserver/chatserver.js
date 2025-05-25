@@ -6,24 +6,27 @@ const cors = require("cors");
 const app = express();
 const server = http.createServer(app);
 
+// Allow cross-origin requests from your frontend
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:5173", "https://your-frontend.vercel.app"],
-        methods: ["GET", "POST"],
-        credentials: true,
-    },
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
 });
 
+// Map to store connected users
 const userSockets = new Map();
 
 io.on("connection", (socket) => {
     console.log("Connected:", socket.id);
 
+    // When a user authenticates, save their socket
     socket.on("authenticate", (userId) => {
         userSockets.set(userId, socket.id);
         console.log(`User ${userId} authenticated`);
     });
 
+    // Handle sending a private message
     socket.on("private-message", ({ to, from, message }) => {
         const receiverSocketId = userSockets.get(to);
         if (receiverSocketId) {
@@ -32,14 +35,12 @@ io.on("connection", (socket) => {
                 message,
                 timestamp: new Date(),
             });
-
-            // Emit delivery confirmation back to sender
-            socket.emit("message-delivered", { to, success: true });
         } else {
-            socket.emit("message-delivered", { to, success: false, error: "User not connected" });
+            console.log(`User ${to} not connected`);
         }
     });
 
+    // Clean up when a socket disconnects
     socket.on("disconnect", () => {
         for (const [userId, sockId] of userSockets.entries()) {
             if (sockId === socket.id) {
@@ -51,10 +52,10 @@ io.on("connection", (socket) => {
 });
 
 app.get("/", (req, res) => {
-    res.send("Chat server is running");
+    res.send("🔌 Chat server is live!");
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
-    console.log(`Chat server listening on port ${PORT}`);
+    console.log(`🗨️ Chat server listening on port ${PORT}`);
 });
