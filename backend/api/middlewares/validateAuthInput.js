@@ -2,6 +2,20 @@ const { sendError } = require("../utils/response");
 const HTTP = require("../utils/httStatus");
 const validator = require("../utils/validator");
 
+/**
+ * Global error handler middleware
+ *
+ * @function globalErrorHandler
+ * @param {Object} err - Error object
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Object} - Returns 500 error response
+ *
+ * @description
+ * Catches all unhandled errors throughout the application.
+ * Logs error stack to console and returns a generic 500 error response.
+ */
 const validateSignupInput = (req, res, next) => {
   // 1. Check if req.body exists and is an object
   if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
@@ -126,6 +140,25 @@ const validateSignupInput = (req, res, next) => {
   next();
 };
 
+
+/**
+ * Login input validation middleware
+ *
+ * @function validateLoginInput
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body containing login credentials
+ * @param {String} req.body.email - User's email address
+ * @param {String} req.body.password - User's password
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Object} - Returns error response or calls next() to proceed
+ * @throws {Error} - If authentication service is unavailable
+ *
+ * @description
+ * Validates required fields for user login.
+ * Ensures both email and password are provided.
+ * If all validations pass, proceeds to the next middleware.
+ */
 const validateLoginInput = (req, res, next) => {
   try {
     const { email, password } = req.body;

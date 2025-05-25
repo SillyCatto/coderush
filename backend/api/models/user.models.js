@@ -2,6 +2,25 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const { generateToken } = require("../utils/jwt");
 
+/**
+ * User Schema
+ *
+ * @property {String} name - User's full name (required, trimmed, 6-50 characters)
+ * @property {String} email - User's email address (required, unique, lowercase)
+ * @property {String} password - Hashed password (required, minimum 8 characters)
+ * @property {String} university - User's affiliated university (required)
+ * @property {String} dept - User's academic department
+ * @property {Number} year - User's academic year
+ * @property {String} phone - User's phone number (not included in default queries)
+ * @property {String} program - User's academic program (required)
+ * @property {Date} dob - User's date of birth (required)
+ * @property {String} role - User role: "user" or "admin" (defaults to "user")
+ * @property {Boolean} share - Whether user's profile information can be shared (defaults to false)
+ * @property {Date} createdAt - When the user account was created (defaults to current time)
+ * @property {Date} updatedAt - Automatically tracked update timestamp
+ * @method {Function} getJWT - Generates a JWT token for the user
+ * @method {Function} checkPassword - Validates a provided password against the stored hash
+ */
 const userSchema = new mongoose.Schema(
   {
     name: {

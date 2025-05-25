@@ -1,3 +1,18 @@
+/**
+ * JSON syntax error handler middleware
+ *
+ * @function jsonErrorHandler
+ * @param {Object} err - Error object
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Object} - Returns error response or calls next()
+ *
+ * @description
+ * Handles JSON syntax errors in request body.
+ * If error is a SyntaxError with status 400, returns formatted error response.
+ * Otherwise, passes error to next middleware.
+ */
 const jsonErrorHandler = (err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     return res.status(400).json({
@@ -7,6 +22,19 @@ const jsonErrorHandler = (err, req, res, next) => {
   next(err);
 };
 
+/**
+ * Route not found middleware
+ *
+ * @function routeNotFound
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Object} - Returns 404 error response
+ *
+ * @description
+ * Handles requests to non-existent routes.
+ * Returns a 404 error with details about the attempted route.
+ */
 const routeNotFound = (req, res, next) => {
   res.status(404).json({
     error: "Not Found",
@@ -14,7 +42,20 @@ const routeNotFound = (req, res, next) => {
   });
 };
 
-// middleware to handle all unhandled errors
+/**
+ * Global error handler middleware
+ *
+ * @function globalErrorHandler
+ * @param {Object} err - Error object
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Object} - Returns 500 error response
+ *
+ * @description
+ * Catches all unhandled errors throughout the application.
+ * Logs error stack to console and returns a generic 500 error response.
+ */
 const globalErrorHandler = (err, req, res, next) => {
   console.error(err.stack);
 
