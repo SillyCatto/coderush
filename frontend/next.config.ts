@@ -9,22 +9,23 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true, // Ignore TypeScript errors during build
   } ,
-  // Your existing config
+  // Configuration to allow images from all sources
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
-        pathname: '/**',
+        hostname: '**',
       },
-      // Add other image sources as needed:
       {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-      },
+        protocol: 'http',
+        hostname: '**',
+      }
+    ],
+    // Alternatively, you can uncomment this for an even simpler approach:
+    // unoptimized: true,
       // You can also use domains (less secure but simpler)
       // domains: ['images.unsplash.com', 'picsum.photos']
-    ],
+    
   },
 };
 

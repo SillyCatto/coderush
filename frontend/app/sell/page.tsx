@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -30,38 +30,51 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
-// Form schema with validation - removed agreeToTerms requirement
-const sellFormSchema = z.object({
-  title: z.string().min(5, { message: "Title must be at least 5 characters" }).max(100),
-  description: z.string().min(20, { message: "Description must be at least 20 characters" }).max(500),
-  type: z.enum(["item", "service"], {
-    required_error: "Please select what you're selling",
-  }),
-  price: z.string().refine(val => !isNaN(Number(val)) && Number(val) > 0, {
-    message: "Price must be a positive number",
-  }),
-  condition: z.enum(["NEW", "LIKE NEW", "GOOD", "FAIR"], {
-    required_error: "Please select a condition",
-  }).optional(),
-  category: z.enum(["TEXTBOOK", "ELECTRONICS", "FURNITURE", "TUTORING", "OTHERS"], {
-    required_error: "Please select a category",
-  }),
-  visibility: z.enum(["university", "global"], {
-    required_error: "Please select visibility",
-  }),
-  biddingEnabled: z.boolean(),
-});
+// Form schema with validation
+const sellFormSchema = z.discriminatedUnion("type", [
+    z.object({
+        type: z.literal("item"),
+        title: z.string().min(5, { message: "Title must be at least 5 characters" }).max(100),
+        description: z.string().min(20, { message: "Description must be at least 20 characters" }).max(500),
+        price: z.string().refine(val => !isNaN(Number(val)) && Number(val) > 0, {
+            message: "Price must be a positive number",
+        }),
+        condition: z.enum(["new", "like_new", "good", "fair"]),
+        category: z.enum(["textbooks", "electronics", "furniture", "tutoring", "other"]),
+        visibility: z.enum(["university", "global"]),
+        biddingEnabled: z.boolean(),
+    }),
+    z.object({
+        type: z.literal("service"),
+        title: z.string().min(5).max(100),
+        description: z.string().min(20).max(500),
+        hourlyRate: z.string().refine(val => !isNaN(Number(val)) && Number(val) > 0, {
+            message: "Hourly rate must be a positive number",
+        }),
+        category: z.enum(["textbooks", "electronics", "furniture", "tutoring", "other"]),
+        visibility: z.enum(["university", "global"]),
+        biddingEnabled: z.boolean(),
+    }),
+]);
 
 type SellFormValues = z.infer<typeof sellFormSchema>;
 
 export default function SellPage() {
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const { toast } = useToast();
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [debugInfo, setDebugInfo] = useState("");
 
-  // Initialize the form - removed agreeToTerms field
+  // Initialize the form
   const form = useForm<SellFormValues>({
     resolver: zodResolver(sellFormSchema),
     defaultValues: {
@@ -69,61 +82,154 @@ export default function SellPage() {
       description: "",
       type: "item",
       price: "",
-      category: undefined,
+      category: "electronics",
       visibility: "university",
       biddingEnabled: false,
+      condition: "new"
     }
   });
   
   // Watch form values to conditionally show fields
   const type = form.watch("type");
 
-  // Handle image upload
+  // Handle image selection
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
     setUploading(true);
     
-    // Convert FileList to array and process each file
-    const newFiles = Array.from(e.target.files).slice(0, 5 - uploadedImages.length);
+    // Convert FileList to array and limit to 5 images
+    const newFiles = Array.from(e.target.files).slice(0, 5 - imageFiles.length);
     
-    // Convert files to local URLs (in a real app, you'd upload to server)
-    const newImageURLs = newFiles.map(file => URL.createObjectURL(file));
+    // Process files and create previews
+    const newPreviewUrls = newFiles.map(file => URL.createObjectURL(file));
     
-    setUploadedImages(prev => [...prev, ...newImageURLs]);
+    // Update states
+    setImageFiles(prev => [...prev, ...newFiles]);
+    setImagePreviewUrls(prev => [...prev, ...newPreviewUrls]);
     setUploading(false);
   };
   
-  // Remove an uploaded image
+  // Remove an image
   const removeImage = (index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    // Clean up object URL to prevent memory leaks
+    URL.revokeObjectURL(imagePreviewUrls[index]);
+    
+    // Remove file and preview
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   // Form submission handler
   const onSubmit = async (data: SellFormValues) => {
-    setSubmitting(true);
-    
-    // Create the final data including images
-    const finalData = {
-      ...data,
-      price: Number(data.price),
-      images: uploadedImages,
-    };
-    
     try {
-      // Here you would send the data to your backend API
-      console.log("Submitting data:", finalData);
+      setSubmitting(true);
+      setDebugInfo("");
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Check if user is authenticated
+      const userString = localStorage.getItem('user');
+      if (!userString) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to create a listing",
+          variant: "destructive"
+        });
+        router.push('/login');
+        return;
+      }
+
+      // Check if images are present
+      if (imageFiles.length === 0) {
+        toast({
+          title: "Images Required",
+          description: "Please add at least one image",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Create FormData to handle file uploads
+      const formData = new FormData();
       
-      // Show success message and reset form
-      alert("Listing created successfully!");
-      form.reset();
-      setUploadedImages([]);
-    } catch (error) {
+      // Add form fields to FormData with proper field names
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      formData.append("type", data.type);
+      
+      // Handle different fields based on item type
+      if (data.type === "item") {
+        formData.append("price", data.price);
+        formData.append("condition", data.condition || "new");
+      } else {
+        // For services
+        formData.append("hourlyRate", "100");
+      }
+      
+      formData.append("category", data.category);
+      formData.append("visibility", data.visibility);
+      formData.append("biddingEnabled", String(data.biddingEnabled));
+      
+      // Add images to FormData
+      imageFiles.forEach((file) => {
+        formData.append("images", file);
+      });
+      
+      // Log what's being sent for debugging
+      let formDataContent = "Form data being sent:\n";
+      for (let [key, value] of formData.entries()) {
+        formDataContent += `${key}: ${value instanceof File ? value.name : value}\n`;
+      }
+      console.log(formDataContent);
+      
+      // Make the request - CORRECTED ENDPOINT
+      const response = await axios.post(
+        "http://localhost:4000/api/listings/add", // Updated endpoint to match backend
+        formData,
+        { 
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        }
+      );
+      
+      if (response.data && response.data.success) {
+        toast({
+          title: "Listing Created",
+          description: "Your listing has been published successfully!",
+        });
+        
+        // Reset form and image states
+        form.reset();
+        setImageFiles([]);
+        setImagePreviewUrls([]);
+        
+        // Redirect to discover page
+        router.push("/discover");
+      } else {
+        throw new Error(response.data?.error || "Unknown error occurred");
+      }
+    } catch (error: any) {
       console.error("Error creating listing:", error);
-      alert("Failed to create listing. Please try again.");
+      
+      // Detailed error logging
+      if (error.response) {
+        console.error("Status:", error.response.status);
+        console.error("Response data:", error.response.data);
+        setDebugInfo(error.response.data instanceof Object 
+          ? JSON.stringify(error.response.data, null, 2) 
+          : String(error.response.data));
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+        setDebugInfo("No response received from the server. Check if the backend is running.");
+      } else {
+        console.error("Error message:", error.message);
+        setDebugInfo(error.message);
+      }
+      
+      toast({
+        title: "Error",
+        description: error.response?.data?.error || error.message || "Failed to create listing",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -251,11 +357,11 @@ export default function SellPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="TEXTBOOK">Textbooks</SelectItem>
-                                <SelectItem value="ELECTRONICS">Electronics</SelectItem>
-                                <SelectItem value="FURNITURE">Furniture</SelectItem>
-                                <SelectItem value="TUTORING">Tutoring</SelectItem>
-                                <SelectItem value="OTHERS">Others</SelectItem>
+                                <SelectItem value="textbooks">Textbooks</SelectItem>
+                                <SelectItem value="electronics">Electronics</SelectItem>
+                                <SelectItem value="furniture">Furniture</SelectItem>
+                                <SelectItem value="tutoring">Tutoring</SelectItem>
+                                <SelectItem value="other">Others</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -280,10 +386,10 @@ export default function SellPage() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="NEW">New</SelectItem>
-                                  <SelectItem value="LIKE NEW">Like New</SelectItem>
-                                  <SelectItem value="GOOD">Good</SelectItem>
-                                  <SelectItem value="FAIR">Fair</SelectItem>
+                                  <SelectItem value="new">New</SelectItem>
+                                  <SelectItem value="like_new">Like New</SelectItem>
+                                  <SelectItem value="good">Good</SelectItem>
+                                  <SelectItem value="fair">Fair</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -306,7 +412,7 @@ export default function SellPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            {type === "item" ? "Price ($)" : "Rate ($)"}
+                            {type === "item" ? "Price ($)" : "Hourly Rate ($)"}
                           </FormLabel>
                           <FormControl>
                             <div className="relative">
@@ -321,7 +427,7 @@ export default function SellPage() {
                             </div>
                           </FormControl>
                           <FormDescription>
-                            {type === "service" && "You can specify per hour, per session, etc. in the description"}
+                            {type === "service" && "Set your hourly rate for this service"}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -387,7 +493,7 @@ export default function SellPage() {
                     <h2 className="text-xl font-semibold">Images</h2>
                     
                     <div className="border border-dashed rounded-lg p-6 flex flex-col items-center justify-center">
-                      {uploadedImages.length < 5 && (
+                      {imagePreviewUrls.length < 5 && (
                         <label className="w-full cursor-pointer">
                           <div className="flex flex-col items-center justify-center py-4">
                             <Upload className="h-10 w-10 text-muted-foreground mb-2" />
@@ -395,16 +501,17 @@ export default function SellPage() {
                               Upload Images
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              Add up to {5 - uploadedImages.length} more images
+                              Add up to {5 - imagePreviewUrls.length} more images
                             </p>
                           </div>
                           <input
+                            ref={fileInputRef}
                             type="file"
                             className="hidden"
                             accept="image/*"
                             multiple
                             onChange={handleImageUpload}
-                            disabled={uploading || uploadedImages.length >= 5}
+                            disabled={uploading || imagePreviewUrls.length >= 5}
                           />
                         </label>
                       )}
@@ -416,9 +523,9 @@ export default function SellPage() {
                         </div>
                       )}
                       
-                      {uploadedImages.length > 0 && (
+                      {imagePreviewUrls.length > 0 && (
                         <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 gap-3 w-full">
-                          {uploadedImages.map((img, index) => (
+                          {imagePreviewUrls.map((img, index) => (
                             <div key={index} className="relative aspect-square rounded-md overflow-hidden border">
                               <Image
                                 src={img}
@@ -443,14 +550,22 @@ export default function SellPage() {
                         </div>
                       )}
                     </div>
+                    
                     <p className="text-sm text-muted-foreground">
                       Allowed formats: JPG, PNG, GIF. Max 5MB each. First image will be the cover.
                     </p>
                   </div>
 
+                  {debugInfo && (
+                    <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono overflow-auto max-h-48">
+                      <p className="font-semibold mb-2">Debug Info:</p>
+                      <pre>{debugInfo}</pre>
+                    </div>
+                  )}
+
                   <Separator />
 
-                  {/* Submit button - removed Terms section */}
+                  {/* Submit button */}
                   <Button type="submit" className="w-full" disabled={submitting}>
                     {submitting ? (
                       <>

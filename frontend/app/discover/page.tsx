@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,399 +12,450 @@ import { Book, Filter, Laptop, MessageCircle, Pencil, Search, SlidersHorizontal,
 import Header from "@/app/components/layout/header"
 import Footer from "@/app/components/layout/footer"
 import { ChatPopup } from "@/app/components/chat/chat-popup"
+import axios from "axios"
 
-// Mock data for items
-const ITEMS_DATA = [
-  {
-    id: 1,
-    title: "Calculus Textbook",
-    description: "Early Transcendentals, 8th Edition by James Stewart",
-    price: 45,
-    location: "Main Campus",
-    condition: "Like New",
-    category: "textbook",
-    image: "https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=500",
-    seller: "Alex Johnson",
-    sellerId: "alex123",
-    postedDate: "2 days ago"
-  },
-  {
-    id: 2,
-    title: "MacBook Air (2020)",
-    description: "M1 chip, 8GB RAM, 256GB SSD, excellent condition",
-    price: 750,
-    location: "North Campus",
-    condition: "Used - Good",
-    category: "gadget",
-    image: "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?q=80&w=500",
-    seller: "Samantha Lee",
-    sellerId: "sam456",
-    postedDate: "5 days ago"
-  },
-  {
-    id: 3,
-    title: "Physics for Scientists & Engineers",
-    description: "4th Edition with online access code included",
-    price: 55,
-    location: "Science Building",
-    condition: "Good",
-    category: "textbook",
-    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=500",
-    seller: "Michael Wong",
-    sellerId: "mike789",
-    postedDate: "1 week ago"
-  },
-  {
-    id: 4,
-    title: "iPad Pro 11\" (2021)",
-    description: "With Apple Pencil and Magic Keyboard, perfect for notes",
-    price: 820,
-    location: "Student Center",
-    condition: "Like New",
-    category: "gadget",
-    image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=500",
-    seller: "Emma Taylor",
-    sellerId: "emma101",
-    postedDate: "3 days ago"
-  }
-];
+// Define types for listings
+interface Seller {
+  _id: string;
+  name: string;
+  university: string;
+}
 
-// Mock data for services
-const SERVICES_DATA = [
-  {
-    id: 101,
-    title: "Calculus Tutoring",
-    description: "One-on-one tutoring for Calculus I, II, and III",
-    price: 25,
-    priceUnit: "per hour",
-    location: "Online or In-person",
-    category: "tutoring",
-    image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=500",
-    seller: "Prof. Sarah Miller",
-    sellerId: "sarah222",
-    rating: 4.9,
-    postedDate: "1 day ago"
-  },
-  {
-    id: 102,
-    title: "Web Development",
-    description: "Custom website development with React and Next.js",
-    price: 200,
-    priceUnit: "starting at",
-    location: "Remote",
-    category: "skill",
-    image: "https://images.unsplash.com/photo-1593720213428-28a5b9e94613?q=80&w=500",
-    seller: "Rob Chen",
-    sellerId: "rob333",
-    rating: 4.7,
-    postedDate: "3 days ago"
-  },
-  {
-    id: 103,
-    title: "Essay Editing & Proofreading",
-    description: "Professional editing for essays and term papers",
-    price: 15,
-    priceUnit: "per page",
-    location: "Online",
-    category: "skill",
-    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=500",
-    seller: "Dr. Emily White",
-    sellerId: "emily444",
-    rating: 4.8,
-    postedDate: "2 days ago"
-  },
-  {
-    id: 104,
-    title: "Organic Chemistry Tutoring",
-    description: "Help with reaction mechanisms, lab reports, and exam prep",
-    price: 30,
-    priceUnit: "per hour",
-    location: "Chemistry Building or Online",
-    category: "tutoring",
-    image: "https://images.unsplash.com/photo-1532634993-15f421e42ec0?q=80&w=500",
-    seller: "Thomas Grant",
-    sellerId: "tom555",
-    rating: 4.9,
-    postedDate: "1 week ago"
-  }
-];
+interface Bid {
+  user: string;
+  amount: number;
+  _id: string;
+  timestamp: string;
+}
+
+interface Listing {
+  _id: string;
+  title: string;
+  description: string;
+  type: "item" | "service";
+  price: number;
+  hourlyRate: number | null;
+  condition: string;
+  category: string;
+  visibility: string;
+  seller: Seller;
+  university: string;
+  images: string[];
+  status: string;
+  biddingEnabled: boolean;
+  bids?: Bid[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function DiscoverPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
+  // State for real data from API
+  const [listings, setListings] = useState<Listing[]>([])
+  
   // Add these states for the chat popup
   const [chatOpen, setChatOpen] = useState(false)
   const [activeSeller, setActiveSeller] = useState<any>(null)
   const [activeItem, setActiveItem] = useState<any>(null)
 
-  // Filter items based on search and category
-  const filteredItems = ITEMS_DATA.filter(item => {
-    const matchesQuery = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        item.description.toLowerCase().includes(searchQuery.toLowerCase())
+  // Fetch listings from API
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        setIsLoading(true)
+        
+        // Get auth token from localStorage
+        const user = localStorage.getItem('user')
+        if (!user) {
+          throw new Error("You need to be logged in to view listings")
+        }
+        
+        // Fetch listings from API
+        const response = await axios.get(
+          "http://localhost:4000/api/listings",
+          { withCredentials: true }
+        )
+        
+        if (response.data && response.data.data) {
+          setListings(response.data.data)
+        }
+      } catch (err: any) {
+        console.error("Error fetching listings:", err)
+        setError(err.message || "Failed to load listings")
+      } finally {
+        setIsLoading(false)
+      }
+    }
     
-    if (selectedCategory === "all") return matchesQuery
-    return matchesQuery && item.category === selectedCategory
-  })
+    fetchListings()
+  }, [])
+  
+  // Filter items and services based on search and category
+  const filteredItems = listings
+    .filter(listing => listing.type === "item")
+    .filter(listing => {
+      const matchesQuery = 
+        listing.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        listing.description.toLowerCase().includes(searchQuery.toLowerCase())
+      
+      if (selectedCategory === "all") return matchesQuery
+      return matchesQuery && listing.category === selectedCategory
+    })
+  
+  const filteredServices = listings
+    .filter(listing => listing.type === "service")
+    .filter(listing => {
+      const matchesQuery = 
+        listing.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        listing.description.toLowerCase().includes(searchQuery.toLowerCase())
+      
+      if (selectedCategory === "all") return matchesQuery
+      return matchesQuery && listing.category === selectedCategory
+    })
 
-  // Filter services based on search and category
-  const filteredServices = SERVICES_DATA.filter(service => {
-    const matchesQuery = service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchQuery.toLowerCase())
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    if (selectedCategory === "all") return matchesQuery
-    return matchesQuery && service.category === selectedCategory
-  })
-
+    if (diffDays === 0) {
+      return "Today";
+    } else if (diffDays === 1) {
+      return "Yesterday";
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else if (diffDays < 30) {
+      return `${Math.floor(diffDays / 7)} weeks ago`;
+    } else {
+      return `${Math.floor(diffDays / 30)} months ago`;
+    }
+  };
+  
   // Helper function to render appropriate icon for category
   const CategoryIcon = ({ category }: { category: string }) => {
-    switch (category) {
-      case 'textbook':
-        return <Book className="h-4 w-4 mr-1" />
-      case 'gadget':
-        return <Laptop className="h-4 w-4 mr-1" />
+    switch(category) {
+      case 'textbooks':
+        return <Book className="h-3.5 w-3.5 mr-1.5" />
+      case 'electronics':
+        return <Laptop className="h-3.5 w-3.5 mr-1.5" />
       case 'tutoring':
-        return <Pencil className="h-4 w-4 mr-1" />
+        return <Pencil className="h-3.5 w-3.5 mr-1.5" />
       case 'skill':
-        return <Zap className="h-4 w-4 mr-1" />
+        return <Zap className="h-3.5 w-3.5 mr-1.5" />
       default:
-        return null
+        return <Laptop className="h-3.5 w-3.5 mr-1.5" />
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex-1 py-12">
+          <div className="container max-w-6xl mx-auto px-4">
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex-1 py-12">
+          <div className="container max-w-6xl mx-auto px-4">
+            <div className="flex flex-col justify-center items-center h-64">
+              <p className="text-red-500 mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
   }
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="flex-grow">
-        <div className="container mx-auto py-8 px-4">
-          <h1 className="text-3xl font-bold mb-2">Discover</h1>
+      <main className="flex-1 py-8">
+        <div className="container max-w-6xl mx-auto px-4">
+          <h1 className="text-4xl font-bold">Discover</h1>
           <p className="text-muted-foreground mb-8">
             Find textbooks, gadgets, tutoring services, and more from other students
           </p>
-
-          {/* Search and Filter Bar */}
-          <div className="flex gap-4 mb-8">
-            <div className="relative flex-grow">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input 
-                placeholder="Search for items or services..." 
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8">
+            {/* Filters */}
+            <div className="space-y-6">
+              <div className="flex items-center rounded-lg border px-3 focus-within:ring-1 focus-within:ring-ring">
+                <Search className="h-5 w-5 text-muted-foreground" />
+                <Input 
+                  placeholder="Search for items or services..." 
+                  className="border-0 focus-visible:ring-0" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <Filter className="h-4 w-4" /> Filters
+                </h3>
+                <div className="space-y-4">
+                  <Button 
+                    variant={selectedCategory === "all" ? "default" : "outline"} 
+                    className="w-full justify-start" 
+                    onClick={() => setSelectedCategory("all")}
+                  >
+                    <SlidersHorizontal className="h-4 w-4 mr-2" /> All Categories
+                  </Button>
+                  <Button 
+                    variant={selectedCategory === "electronics" ? "default" : "outline"} 
+                    className="w-full justify-start" 
+                    onClick={() => setSelectedCategory("electronics")}
+                  >
+                    <Laptop className="h-4 w-4 mr-2" /> Electronics
+                  </Button>
+                  <Button 
+                    variant={selectedCategory === "textbooks" ? "default" : "outline"} 
+                    className="w-full justify-start" 
+                    onClick={() => setSelectedCategory("textbooks")}
+                  >
+                    <Book className="h-4 w-4 mr-2" /> Textbooks
+                  </Button>
+                  <Button 
+                    variant={selectedCategory === "tutoring" ? "default" : "outline"} 
+                    className="w-full justify-start" 
+                    onClick={() => setSelectedCategory("tutoring")}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" /> Tutoring Services
+                  </Button>
+                  <Button 
+                    variant={selectedCategory === "other" ? "default" : "outline"} 
+                    className="w-full justify-start" 
+                    onClick={() => setSelectedCategory("other")}
+                  >
+                    <Users className="h-4 w-4 mr-2" /> Other Services
+                  </Button>
+                </div>
+              </div>
             </div>
             
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex gap-2" onClick={() => setSelectedCategory(selectedCategory === "all" ? "textbook" : "all")}>
-                <Filter className="h-4 w-4" />
-                <span className="hidden sm:inline">
-                  {selectedCategory === "all" ? "Filter" : "Clear"}
-                </span>
-              </Button>
+            {/* Main Content */}
+            <Tabs defaultValue="items">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="items">
+                  <Laptop className="h-4 w-4 mr-2" /> Tangible Items
+                </TabsTrigger>
+                <TabsTrigger value="services">
+                  <Users className="h-4 w-4 mr-2" /> Services
+                </TabsTrigger>
+              </TabsList>
               
-              <Button variant="outline" className="flex gap-2">
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="hidden sm:inline">Sort</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Tabs for Items and Services */}
-          <Tabs defaultValue="items" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="items" className="text-base">
-                <Laptop className="h-4 w-4 mr-2" /> Tangible Items
-              </TabsTrigger>
-              <TabsTrigger value="services" className="text-base">
-                <Users className="h-4 w-4 mr-2" /> Services
-              </TabsTrigger>
-            </TabsList>
-            
-            {/* Items Tab Content */}
-            <TabsContent value="items">
-              {selectedCategory !== "all" && selectedCategory !== "tutoring" && selectedCategory !== "skill" && (
-                <div className="mb-6">
-                  <Badge variant="outline" className="text-sm py-1">
-                    <CategoryIcon category={selectedCategory} />
-                    {selectedCategory === "textbook" ? "Textbooks" : "Gadgets"}
-                    <button className="ml-2 hover:text-destructive" onClick={() => setSelectedCategory("all")}>✕</button>
-                  </Badge>
-                </div>
-              )}
+              {/* Items Tab Content */}
+              <TabsContent value="items">
+                {selectedCategory !== "all" && selectedCategory !== "tutoring" && selectedCategory !== "other" && (
+                  <div className="mb-6">
+                    <Badge variant="outline" className="text-sm py-1">
+                      <CategoryIcon category={selectedCategory} />
+                      {selectedCategory === "textbooks" ? "Textbooks" : "Electronics"}
+                      <button className="ml-2 hover:text-destructive" onClick={() => setSelectedCategory("all")}>✕</button>
+                    </Badge>
+                  </div>
+                )}
+                
+                {filteredItems.length === 0 ? (
+                  <div className="text-center py-16">
+                    <h3 className="text-xl font-medium">No items found</h3>
+                    <p className="text-muted-foreground mt-2">
+                      Try changing your search query or filter
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredItems.map((item) => (
+                      <div key={item._id} className="group">
+                        <Card className="overflow-hidden h-full hover:shadow-md transition-shadow">
+                          <Link href={`/item/${item._id}`}>
+                            <div className="aspect-video relative overflow-hidden">
+                              {item.images && item.images.length > 0 ? (
+                                <Image
+                                  src={item.images[0]}
+                                  alt={item.title}
+                                  fill
+                                  className="object-cover transition-transform group-hover:scale-105"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500">
+                                  No Image
+                                </div>
+                              )}
+                            </div>
+                            <CardContent className="p-4">
+                              <div className="flex justify-between mb-2">
+                                <Badge variant="secondary">${item.price}</Badge>
+                                <span className="text-sm text-muted-foreground">{formatDate(item.createdAt)}</span>
+                              </div>
+                              <h3 className="text-lg font-medium mb-1">{item.title}</h3>
+                              <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                                {item.description}
+                              </p>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <CategoryIcon category={item.category} />
+                                <span className="capitalize">{item.category}</span>
+                                <span className="mx-2">•</span>
+                                <span>{item.condition}</span>
+                              </div>
+                            </CardContent>
+                          </Link>
+                          <CardFooter className="px-4 py-3 border-t bg-muted/50 flex flex-col gap-2">
+                            <div className="flex justify-between w-full">
+                              <div className="text-sm">{item.university}</div>
+                              <div className="text-sm font-medium">{item.seller.name}</div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full"
+                              onClick={() => {
+                                setActiveSeller({
+                                  id: item.seller._id,
+                                  name: item.seller.name
+                                });
+                                setActiveItem({
+                                  id: item._id,
+                                  title: item.title,
+                                  type: "product"
+                                });
+                                setChatOpen(true);
+                              }}
+                            >
+                              <MessageCircle className="h-4 w-4 mr-2" />
+                              Chat with Seller
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
               
-              {filteredItems.length === 0 ? (
-                <div className="text-center py-16">
-                  <h3 className="text-xl font-medium">No items found</h3>
-                  <p className="text-muted-foreground mt-2">
-                    Try changing your search query or filter
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredItems.map((item) => (
-                    <div key={item.id} className="group">
-                      <Card className="overflow-hidden h-full hover:shadow-md transition-shadow">
-                        <Link href={`/item/${item.id}`}>
-                          <div className="aspect-video relative overflow-hidden">
-                            <Image
-                              src={item.image}
-                              alt={item.title}
-                              fill
-                              className="object-cover transition-transform group-hover:scale-105"
-                            />
-                          </div>
-                          <CardContent className="p-4">
-                            <div className="flex justify-between mb-2">
-                              <Badge variant="secondary">${item.price}</Badge>
-                              <span className="text-sm text-muted-foreground">{item.postedDate}</span>
+              {/* Services Tab Content */}
+              <TabsContent value="services">
+                {selectedCategory !== "all" && selectedCategory !== "textbooks" && selectedCategory !== "electronics" && (
+                  <div className="mb-6">
+                    <Badge variant="outline" className="text-sm py-1">
+                      <CategoryIcon category={selectedCategory} />
+                      {selectedCategory === "tutoring" ? "Tutoring" : "Other Services"}
+                      <button className="ml-2 hover:text-destructive" onClick={() => setSelectedCategory("all")}>✕</button>
+                    </Badge>
+                  </div>
+                )}
+                
+                {filteredServices.length === 0 ? (
+                  <div className="text-center py-16">
+                    <h3 className="text-xl font-medium">No services found</h3>
+                    <p className="text-muted-foreground mt-2">
+                      Try changing your search query or filter
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredServices.map((service) => (
+                      <div key={service._id} className="group">
+                        <Card className="overflow-hidden h-full hover:shadow-md transition-shadow">
+                          <Link href={`/service/${service._id}`}>
+                            <div className="aspect-video relative overflow-hidden">
+                              {service.images && service.images.length > 0 ? (
+                                <Image
+                                  src={service.images[0]}
+                                  alt={service.title}
+                                  fill
+                                  className="object-cover transition-transform group-hover:scale-105"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500">
+                                  No Image
+                                </div>
+                              )}
                             </div>
-                            <h3 className="text-lg font-medium mb-1">{item.title}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                              {item.description}
-                            </p>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <CategoryIcon category={item.category} />
-                              <span className="capitalize">{item.category}</span>
-                              <span className="mx-2">•</span>
-                              <span>{item.condition}</span>
-                            </div>
-                          </CardContent>
-                        </Link>
-                        <CardFooter className="px-4 py-3 border-t bg-muted/50 flex flex-col gap-2">
-                          <div className="flex justify-between w-full">
-                            <div className="text-sm">{item.location}</div>
-                            <div className="text-sm font-medium">{item.seller}</div>
-                          </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="w-full"
-                            onClick={() => {
-                              setActiveSeller({
-                                id: item.sellerId,
-                                name: item.seller
-                              })
-                              setActiveItem({
-                                id: item.id,
-                                title: item.title,
-                                type: "product"
-                              })
-                              setChatOpen(true)
-                            }}
-                          >
-                            <MessageCircle className="h-4 w-4 mr-2" />
-                            Chat with Seller
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-            
-            {/* Services Tab Content */}
-            <TabsContent value="services">
-              {selectedCategory !== "all" && selectedCategory !== "textbook" && selectedCategory !== "gadget" && (
-                <div className="mb-6">
-                  <Badge variant="outline" className="text-sm py-1">
-                    <CategoryIcon category={selectedCategory} />
-                    {selectedCategory === "tutoring" ? "Tutoring" : "Skills & Services"}
-                    <button className="ml-2 hover:text-destructive" onClick={() => setSelectedCategory("all")}>✕</button>
-                  </Badge>
-                </div>
-              )}
-              
-              {filteredServices.length === 0 ? (
-                <div className="text-center py-16">
-                  <h3 className="text-xl font-medium">No services found</h3>
-                  <p className="text-muted-foreground mt-2">
-                    Try changing your search query or filter
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredServices.map((service) => (
-                    <div key={service.id} className="group">
-                      <Card className="overflow-hidden h-full hover:shadow-md transition-shadow">
-                        <Link href={`/service/${service.id}`}>
-                          <div className="aspect-video relative overflow-hidden">
-                            <Image
-                              src={service.image}
-                              alt={service.title}
-                              fill
-                              className="object-cover transition-transform group-hover:scale-105"
-                            />
-                          </div>
-                          <CardContent className="p-4">
-                            <div className="flex justify-between mb-2">
-                              <Badge variant="secondary">
-                                ${service.price} <span className="text-xs">{service.priceUnit}</span>
-                              </Badge>
-                              <span className="text-sm text-muted-foreground">{service.postedDate}</span>
-                            </div>
-                            <h3 className="text-lg font-medium mb-1">{service.title}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                              {service.description}
-                            </p>
-                            <div className="flex items-center justify-between">
+                            <CardContent className="p-4">
+                              <div className="flex justify-between mb-2">
+                                <div className="font-medium">
+                                  ${service.hourlyRate} <span className="text-xs">per hour</span>
+                                </div>
+                                <span className="text-sm text-muted-foreground">{formatDate(service.createdAt)}</span>
+                              </div>
+                              <h3 className="text-lg font-medium mb-1">{service.title}</h3>
+                              <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                                {service.description}
+                              </p>
                               <div className="flex items-center text-sm text-muted-foreground">
                                 <CategoryIcon category={service.category} />
                                 <span className="capitalize">{service.category}</span>
                               </div>
-                              <div className="flex items-center">
-                                <svg className="w-4 h-4 text-yellow-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                                <span className="text-sm font-medium">{service.rating}/5.0</span>
-                              </div>
+                            </CardContent>
+                          </Link>
+                          <CardFooter className="px-4 py-3 border-t bg-muted/50 flex flex-col gap-2">
+                            <div className="flex justify-between w-full">
+                              <div className="text-sm">{service.university}</div>
+                              <div className="text-sm font-medium">{service.seller.name}</div>
                             </div>
-                          </CardContent>
-                        </Link>
-                        <CardFooter className="px-4 py-3 border-t bg-muted/50 flex flex-col gap-2">
-                          <div className="flex justify-between w-full">
-                            <div className="text-sm">{service.location}</div>
-                            <div className="text-sm font-medium">{service.seller}</div>
-                          </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="w-full"
-                            onClick={() => {
-                              setActiveSeller({
-                                id: service.sellerId,
-                                name: service.seller
-                              })
-                              setActiveItem({
-                                id: service.id,
-                                title: service.title,
-                                type: "service"
-                              })
-                              setChatOpen(true)
-                            }}
-                          >
-                            <MessageCircle className="h-4 w-4 mr-2" />
-                            Chat with Seller
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-          
-          {/* Chat popup */}
-          {activeSeller && activeItem && (
-            <ChatPopup 
-              isOpen={chatOpen} 
-              onClose={() => setChatOpen(false)} 
-              seller={activeSeller} 
-              item={activeItem}
-            />
-          )}
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full"
+                              onClick={() => {
+                                setActiveSeller({
+                                  id: service.seller._id,
+                                  name: service.seller.name
+                                });
+                                setActiveItem({
+                                  id: service._id,
+                                  title: service.title,
+                                  type: "service"
+                                });
+                                setChatOpen(true);
+                              }}
+                            >
+                              <MessageCircle className="h-4 w-4 mr-2" />
+                              Chat with Seller
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
+        
+        {/* Chat popup if active */}
+        {activeSeller && activeItem && (
+          <ChatPopup
+            isOpen={chatOpen}
+            onClose={() => setChatOpen(false)}
+            seller={activeSeller}
+            item={activeItem}
+          />
+        )}
       </main>
       <Footer />
     </div>
