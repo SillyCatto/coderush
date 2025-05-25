@@ -4,6 +4,14 @@ const { authUserToken } = require("../middlewares/authToken");
 
 const userRouter = express.Router();
 
+/**
+ * GET /api/users/profile
+ * Retrieves authenticated user's profile information
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @returns {object} User's profile data including ID, name, email, and other personal details
+ * @throws {400} If error occurs retrieving profile information
+ */
 userRouter.get("/profile", authUserToken, async (req, res) => {
   try {
     const profileData = {

@@ -1,11 +1,25 @@
+/**
+ * Chat management router
+ * Handles setting up chat sessions between users
+ * @module chatRouter
+ */
+
 const express = require("express");
 const router = express.Router();
 const { authUserToken } = require("../middlewares/authToken");
 const User = require("../models/user.models");
 
-// @desc Start a chat with another user (no DB storage required)
-// @route GET /api/chat/:otherUserId
-// @access Private
+/**
+ * GET /api/chat/:otherUserId
+ * Initiates a chat session with another user
+ *
+ * @middleware {function} authUserToken - Verifies the authenticated user
+ * @param {string} otherUserId - ID of the user to start chat with
+ * @returns {object} Confirmation that chat is ready with user details
+ * @throws {400} If user attempts to chat with themselves
+ * @throws {404} If the other user is not found
+ * @throws {500} If server error occurs during setup
+ */
 router.get("/chat/:otherUserId", authUserToken, async (req, res) => {
   try {
     const userId = req.user.id;

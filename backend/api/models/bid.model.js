@@ -1,5 +1,15 @@
 const mongoose = require("mongoose");
 
+/**
+ * Bid Schema
+ *
+ * @property {ObjectId} listing - Reference to the listing being bid on
+ * @property {ObjectId} user - Reference to the user making the bid
+ * @property {Number} amount - Bid amount (must be >= 0)
+ * @property {Date} timestamp - When the bid was created (defaults to current time)
+ * @property {Date} createdAt - Automatically tracked creation timestamp
+ * @property {Date} updatedAt - Automatically tracked update timestamp
+ */
 const bidSchema = new mongoose.Schema(
   {
     listing: {
